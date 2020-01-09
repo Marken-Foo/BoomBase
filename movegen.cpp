@@ -42,8 +42,8 @@ bool isInCheck(Colour co, const Position& pos) {
 
 
 bool isLegal(Move mv, Position& pos) {
-    // Test if making a move would leave one's own royalty in check.
-    // Assumes move is valid.
+    /// Test if making a move would leave one's own royalty in check.
+    /// Assumes move is valid.
     // For eventual speedup logic can be improved from naive make-unmake-make.
     Colour co {pos.getSideToMove()}; // is this fine? (why not pass as arg?)
     pos.makeMove(mv);
@@ -54,7 +54,8 @@ bool isLegal(Move mv, Position& pos) {
 
 
 uint64_t perft(int depth, Position& pos) {
-    // Recursive function to count all legal moves (nodes) at depth n.
+    /// Recursive function to count all legal moves (nodes) at depth n.
+    /// 
     uint64_t nodes = 0;
     // Terminating condition
     if (depth == 0) {return 1;}
@@ -174,8 +175,8 @@ Movelist& addPawnAttacks(Movelist& mvlist, Colour co, const Position& pos) {
 }
 
 Movelist& addPawnMoves(Movelist& mvlist, Colour co, const Position& pos) {
-    // Generates moves, captures, double moves, promotions (and captures).
-    // Does not generate en passant moves.
+    /// Generates moves, captures, double moves, promotions (and captures).
+    /// Does not generate en passant moves.
     Bitboard bbFrom {pos.getUnitsBb(co, PAWN)};
     Square toSq {NO_SQ};
     
@@ -241,16 +242,16 @@ Movelist& addEpMoves(Movelist& mvlist, Colour co, const Position& pos) {
 }
 
 bool isCastlingValid(CastlingRights cr, const Position& pos) {
-    // Helper function to test if a particular castling is valid.
-    // Takes [CastlingRights cr] corresponding to a single castling.
-    // Tests if king or rook has moved, if their paths are clear, and if the
-    // king passes through any attacked squares. Ignores side to move.
-    //
-    // Subtlety 1: the attacked squares test looks at the diagram "as-is",
-    // including the involved king and rook.
-    // Subtlety 2: because of subtlety 1, there needs to be an additional test
-    // for checks after the move has been *made*. (Not in regular chess, but in
-    // 960, or with certain fairy pieces, it is *necessary*.)
+    /// Helper function to test if a particular castling is valid.
+    /// Takes [CastlingRights cr] corresponding to a single castling.
+    /// Tests if king or rook has moved, if their paths are clear, and if the
+    /// king passes through any attacked squares. Ignores side to move.
+    ///
+    /// Subtlety 1: the attacked squares test looks at the diagram "as-is",
+    /// including the involved king and rook.
+    /// Subtlety 2: because of subtlety 1, there needs to be an additional test
+    /// for checks after the move has been *made*. (Not in regular chess, but in
+    /// 960, or with certain fairy pieces, it is *necessary*.)
     
     // Test if king or relevant rook have moved.
     if (!(cr & pos.getCastlingRights())) {
@@ -302,8 +303,8 @@ Movelist& addCastlingMoves(Movelist& mvlist, Colour co, const Position& pos) {
 
 Bitboard attacksFrom(Square sq, Colour co, PieceType pcty,
                      const Position& pos) {
-    // Returns bitboard of squares attacked by a given piece type placed on a
-    // given square.
+    /// Returns bitboard of squares attacked by a given piece type placed on a
+    /// given square.
     Bitboard bbAttacked {0};
     Bitboard bbAll {pos.getUnitsBb()};
     
@@ -334,9 +335,9 @@ Bitboard attacksFrom(Square sq, Colour co, PieceType pcty,
 
 
 Bitboard attacksTo(Square sq, Colour co, const Position& pos) {
-    // Returns bitboard of units of a given colour that attack a given square.
-    // In chess, most piece types have the following property: if piece PC is on
-    // square SQ_A attacking SQ_B, then from SQ_B it would attack SQ_A.
+    /// Returns bitboard of units of a given colour that attack a given square.
+    /// In chess, most piece types have the property that: if piece PC is on
+    /// square SQ_A attacking SQ_B, then from SQ_B it would attack SQ_A.
     Bitboard bbAttackers {0};
     bbAttackers = kingAttacks[sq] & pos.getUnitsBb(co, KING);
     bbAttackers |= knightAttacks[sq] & pos.getUnitsBb(co, KNIGHT);
@@ -353,6 +354,7 @@ Bitboard attacksTo(Square sq, Colour co, const Position& pos) {
 }
 
 bool isAttacked(Square sq, Colour co, const Position& pos) {
-    // Returns if a square is attacked by pieces of a particular colour.
+    /// Returns if a square is attacked by pieces of a particular colour.
+    /// 
     return !(attacksTo(sq, co, pos) == BB_NONE);
 }

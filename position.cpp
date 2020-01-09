@@ -9,14 +9,14 @@
 #include <stdexcept>
 
 void Position::reset() {
-    // Resets Position to default. (Might want to rewrite explicitly).
+    /// Resets Position to default. (Might want to rewrite explicitly).
     *this = Position(); // cheaty way out; calls default constructor!
     mailbox.fill(NO_PIECE);
     return;
 }
 
 Position& Position::fromFen(const std::string& fenStr) {
-    // Reads a FEN string and sets up the Position accordingly.
+    /// Reads a FEN string and sets up the Position accordingly.
     // TODO: Make it more robust in terms of accepting input.
     std::istringstream fenSs(fenStr);
     fenSs >> std::noskipws;
@@ -92,9 +92,9 @@ Position& Position::fromFen(const std::string& fenStr) {
 
 
 void Position::makeMove(Move mv) {
-    // Makes a move by changing the state of Position.
-    // Assumes the move is valid (not necessarily legal).
-    // Must maintain validity of the Position!
+    /// Makes a move by changing the state of Position.
+    /// Assumes the move is valid (not necessarily legal).
+    /// Must maintain validity of the Position!
     
     // Castling is handled in its own method.
     if (isCastling(mv)) {
@@ -201,9 +201,9 @@ void Position::makeMove(Move mv) {
 
 
 void Position::unmakeMove(Move mv) {
-    // Unmakes (retracts) a move by changing the state of Position.
-    // Assumes the move is valid (not necessarily legal).
-    // Must maintain validity of the Position!
+    /// Unmakes (retracts) a move by changing the state of Position.
+    /// Assumes the move is valid (not necessarily legal).
+    /// Must maintain validity of the Position!
     
     // Castling is handled separately.
     if (isCastling(mv)) {
@@ -261,7 +261,7 @@ void Position::unmakeMove(Move mv) {
 
 
 std::string Position::pretty() const {
-    // Makes a human-readable string of the board represented by Position.
+    /// Makes a human-readable string of the board represented by Position.
     std::array<Piece, NUM_SQUARES> posArr {};
     posArr.fill(NO_PIECE);
     std::string strOut {"+--------+\n"};

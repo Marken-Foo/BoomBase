@@ -1,5 +1,5 @@
 #include "bitboard_lookup.h"
-#include "chessTypes.h"
+#include "chess_types.h"
 #include "bitboard.h"
 
 #include <array>

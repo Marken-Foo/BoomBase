@@ -1,7 +1,7 @@
 #ifndef POSITION_INCLUDED
 #define POSITION_INCLUDED
 
-#include "chessTypes.h"
+#include "chess_types.h"
 #include "bitboard.h"
 #include "move.h"
 
@@ -54,6 +54,8 @@ class Position {
             for (int ico = 0; ico < NUM_COLOURS; ++ico) {bb |= bbByColour[ico];}
             return bb;
         }
+        std::array<Piece, NUM_SQUARES> getMailbox() const {return mailbox;}
+        
         Colour getSideToMove() const {return sideToMove;}
         CastlingRights getCastlingRights() const {return castlingRights;}
         Square getEpSq() const {return epRights;}
@@ -129,5 +131,43 @@ class Position {
         void makeCastlingMove(Move mv);
         void unmakeCastlingMove(Move mv);
 };
+
+
+inline bool operator==(const Position& lhs, const Position& rhs) {
+    /// Default operator override.
+    /// Two Positions are the same if they are the same "chess position". This
+    /// means the piece locations (mailbox and bitboards) are identical, the
+    /// side to move, castling rights, and en passant rights are identical.
+    /// 
+    /// Note: Positions differing by an en passant capture which is pseudolegal
+    /// but not legal due to e.g. a pin, are considered different here but
+    /// identical under FIDE.
+    
+    // TODO: replace with zobrist hash or something
+    if (lhs.getMailbox() != rhs.getMailbox()) {
+        return false;
+    }
+    if (lhs.getUnitsBb(WHITE) != rhs.getUnitsBb(WHITE) ||
+        lhs.getUnitsBb(BLACK) != rhs.getUnitsBb(BLACK)) {
+        return false;
+    }
+    if (lhs.getUnitsBb(PAWN) != rhs.getUnitsBb(PAWN) ||
+        lhs.getUnitsBb(KNIGHT) != rhs.getUnitsBb(KNIGHT) ||
+        lhs.getUnitsBb(BISHOP) != rhs.getUnitsBb(BISHOP) ||
+        lhs.getUnitsBb(ROOK) != rhs.getUnitsBb(ROOK) ||
+        lhs.getUnitsBb(QUEEN) != rhs.getUnitsBb(QUEEN) ||
+        lhs.getUnitsBb(KING) != rhs.getUnitsBb(KING)) {
+        return false;
+    }
+    if (lhs.getSideToMove() != rhs.getSideToMove() ||
+        lhs.getCastlingRights() != rhs.getCastlingRights() ||
+        lhs.getEpSq() != rhs.getEpSq()) {
+        return false;
+    }
+    return true;
+}
+inline bool operator!=(const Position& lhs, const Position& rhs) {
+    return !(lhs == rhs);
+}
 
 #endif //#ifndef POSITION_INCLUDED

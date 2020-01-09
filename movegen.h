@@ -1,7 +1,7 @@
 #ifndef MOVEGEN_INCLUDED
 #define MOVEGEN_INCLUDED
 
-#include "chessTypes.h"
+#include "chess_types.h"
 #include "bitboard.h"
 #include "move.h"
 

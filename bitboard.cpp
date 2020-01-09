@@ -1,5 +1,5 @@
 #include "bitboard.h"
-#include "chessTypes.h"
+#include "chess_types.h"
 
 #include <string>
 

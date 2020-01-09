@@ -1,6 +1,6 @@
 #include "movegen.h"
 
-#include "chessTypes.h"
+#include "chess_types.h"
 #include "move.h"
 #include "bitboard.h"
 #include "bitboard_lookup.h"

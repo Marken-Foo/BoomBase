@@ -1,7 +1,7 @@
 #ifndef BITBOARD_LOOKUP_INCLUDED
 #define BITBOARD_LOOKUP_INCLUDED
 
-#include "chessTypes.h"
+#include "chess_types.h"
 #include "bitboard.h"
 
 #include <array>

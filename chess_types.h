@@ -5,7 +5,7 @@
 #include <array>
 #include <stdexcept> //helps debugging
 
-// === chessTypes.h ===
+// === chess_types.h ===
 // Essentially a lot of global constant variables and functions.
 // These are types pertaining directly to position representation, and methods
 // to convert between them.
@@ -150,7 +150,9 @@ constexpr std::array<CastlingRights, NUM_CASTLES> CASTLE_LIST {
 };
 // Bitwise operations on CastlingRights.
 inline CastlingRights operator~(CastlingRights cr) {
-    return static_cast<CastlingRights>(~static_cast<int>(cr & CASTLE_ALL));
+    return static_cast<CastlingRights>(
+            ~static_cast<int>(cr) & static_cast<int>(CASTLE_ALL)
+           );
 }
 inline CastlingRights& operator&=(CastlingRights& cr1, CastlingRights cr2) {
     cr1 = static_cast<CastlingRights>(
@@ -191,7 +193,7 @@ inline Colour toColour(CastlingRights cr) {
 }
 
 // === Castling squares ===
-// In chess and in 960, the squares of the king and rook after castling are
+// In chess and in 960, the post-castling squares of the king and rook are
 // fixed.
 constexpr std::array<Square, NUM_CASTLES> SQ_K_TO {SQ_G1, SQ_C1, SQ_G8, SQ_C8};
 constexpr std::array<Square, NUM_CASTLES> SQ_R_TO {SQ_F1, SQ_D1, SQ_F8, SQ_D8};

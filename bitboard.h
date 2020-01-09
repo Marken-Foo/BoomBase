@@ -1,7 +1,7 @@
 #ifndef BITBOARD_INCLUDED
 #define BITBOARD_INCLUDED
 
-#include "chessTypes.h"
+#include "chess_types.h"
 
 #include <cstdint>
 #include <string>

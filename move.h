@@ -1,7 +1,7 @@
 #ifndef MOVE_INCLUDED
 #define MOVE_INCLUDED
 
-#include "chessTypes.h"
+#include "chess_types.h"
 
 #include <vector>
 #include <string>

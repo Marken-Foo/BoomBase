@@ -3,10 +3,11 @@
 #include "bitboard.h"
 
 #include <array>
-#include <string>
-#include <sstream>
 #include <cctype>
+#include <memory>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 
 void Position::reset() {
     /// Resets Position to default. (Might want to rewrite explicitly).
@@ -101,50 +102,45 @@ void Position::makeMove(Move mv) {
         makeCastlingMove(mv);
         return;
     }
-    
     const Square fromSq {getFromSq(mv)};
     const Square toSq {getToSq(mv)};
+    // The piece that moved
     const Piece pc {mailbox[fromSq]};
     const Colour co {sideToMove}; // assert sideToMove == getPieceColour(pc);
     const PieceType pcty {getPieceType(pc)};
-    
-    // Remove piece from fromSq
-    bbByColour[co] ^= fromSq;
-    bbByType[pcty] ^= fromSq;
-    mailbox[fromSq] = NO_PIECE;
-    
-    // Handle regular captures and en passant separately
+    // Anything on the destintion square
     const Piece pcDest {mailbox[toSq]};
     const bool isCapture {pcDest != NO_PIECE};
+    
+    // Remove piece from fromSq
+    removePiece(co, pcty, fromSq);
+    
+    // Handle regular captures and en passant separately
     if (isCapture) {
         // Regular capture is occurring (not ep)
         PieceType pctyCap {getPieceType(pcDest)};
-        bbByColour[!co] ^= toSq;
-        bbByType[pctyCap] ^= toSq;
+        removePiece(!co, pctyCap, toSq);
         // For atomic chess, explosion masking here.
     }
     if (isEp(mv)) {
         // ep capture is occurring, erase the captured pawn
         Square sqEpCap {(co == WHITE) ? shiftS(toSq) : shiftN(toSq)};
-        bbByColour[!co] ^= sqEpCap;
-        bbByType[PAWN] ^= sqEpCap;
-        mailbox[sqEpCap] = NO_PIECE;
+        removePiece(!co, PAWN, sqEpCap);
         // No need to store captured piece; ep flag in the Move is sufficient.
     }
+    
     // Place piece on toSq
     if (isPromotion(mv)) {
         PieceType pctyPromo {getPromotionType(mv)};
-        bbByColour[co] ^= toSq;
-        bbByType[pctyPromo] ^= toSq;
-        mailbox[toSq] = piece(co, pctyPromo);
+        addPiece(co, pctyPromo, toSq);
     } else {
-        bbByColour[co] ^= toSq;
-        bbByType[pcty] ^= toSq;
-        mailbox[toSq] = pc;
+        addPiece(co, pcty, toSq);
     }
     // Save irreversible state information in struct, *before* altering them.
     StateInfo undoState {pcDest, castlingRights, epRights, fiftyMoveNum};
-    undoStack.push_back(undoState);
+    // std::unique_ptr<StateInfo> uS = std::make_unique<StateInfo>(pcDest, castlingRights, epRights, fiftyMoveNum);
+    // StateInfo undoState = *uS;
+    // undoStack.push_back(undoState);
     
     // Update ep rights.
     if ((pcty == PAWN) && (fromSq & BB_OUR_2[co]) && (toSq & BB_OUR_4[co])) {
@@ -210,7 +206,6 @@ void Position::unmakeMove(Move mv) {
         unmakeCastlingMove(mv);
         return;
     }
-    
     const Square fromSq {getFromSq(mv)};
     const Square toSq {getToSq(mv)};
     const Piece pc {mailbox[toSq]};
@@ -230,31 +225,23 @@ void Position::unmakeMove(Move mv) {
     
     // Put unit back on original square.
     if (isPromotion(mv)) {
-        bbByColour[co] = bbByColour[co] ^ toSq ^ fromSq;
-        bbByType[pcty] ^= toSq;
-        bbByType[PAWN] ^= fromSq;
-        mailbox[fromSq] = piece(co, PAWN);
+        addPiece(co, PAWN, fromSq);
+        removePiece(co, pcty, toSq);
     } else {
-        bbByColour[co] ^= toSq ^ fromSq;
-        bbByType[pcty] ^= toSq ^ fromSq;
-        mailbox[fromSq] = pc;
+        addPiece(co, pcty, fromSq);
+        removePiece(co, pcty, toSq);
     }
-    // mailbox[toSq] is set when attempting to replace captured piece (if any).
     
     // Put back captured piece, if any (en passant handled separately.)
     const Piece pcCap = undoState.capturedPiece;
-    if (!(pcCap == NO_PIECE)) {
-        bbByColour[getPieceColour(pcCap)] ^= toSq;
-        bbByType[getPieceType(pcCap)] ^= toSq;
+    if (pcCap != NO_PIECE) {
+        addPiece(pcCap, toSq);
     }
-    mailbox[toSq] = pcCap; // if en passant, then pcCap is NO_PIECE.
     
     // replace en passant captured pawn.
     if (isEp(mv)) {
         Square sqEpCap {(co == WHITE) ? shiftS(toSq) : shiftN(toSq)};
-        bbByColour[!co] ^= sqEpCap;
-        bbByType[PAWN] ^= sqEpCap;
-        mailbox[sqEpCap] = piece(!co, PAWN);
+        addPiece(!co, PAWN, sqEpCap);
     }
     return;
 }
@@ -322,16 +309,37 @@ std::string Position::pretty() const {
 
 
 // === Helper methods (private) ===
+
 void Position::addPiece(Piece pc, Square sq) {
-    // Does not maintain position validity. Do not call on NO_PIECE.
+    // Does not maintain position validity. Do not call with NO_PIECE.
     Colour co {getPieceColour(pc)};
     PieceType pcty {getPieceType(pc)};
-    bbByColour[co] |= sq;
-    bbByType[pcty] |= sq;
+    bbByColour[co] ^= sq;
+    bbByType[pcty] ^= sq;
     mailbox[sq] = pc;
     return;
 }
 
+void Position::addPiece(Colour co, PieceType pcty, Square sq) {
+    // Does not maintain position validity by itself.
+    bbByColour[co] ^= sq;
+    bbByType[pcty] ^= sq;
+    mailbox[sq] = piece(co, pcty);
+}
+
+void Position::addPiece(int ico, int ipcty, Square sq) {
+    // Does not maintain position validity by itself.
+    bbByColour[ico] ^= sq;
+    bbByType[ipcty] ^= sq;
+    mailbox[sq] = piece(ico, ipcty);
+}
+
+void Position::removePiece(Colour co, PieceType pcty, Square sq) {
+    // Does not maintain position validity by itself.
+    bbByColour[co] ^= sq;
+    bbByType[pcty] ^= sq;
+    mailbox[sq] = NO_PIECE;
+}
 
 void Position::makeCastlingMove(Move mv) {
     // assert isCastling(mv);

@@ -1,7 +1,8 @@
 #include "bitboard_lookup.h"
 #include "chess_types.h"
 #include "move.h"
-#include "position.h"
+#include "atomic_capture_masks.h" 
+#include "atomic_position.h"
 
 #include <cstdlib>
 #include <iostream>
@@ -15,12 +16,12 @@
 
 class SingleMoveTest {
     public:
-    Position posTest;
+    AtomicPosition posTest;
     Move mv;
     
     std::string strFenBefore, strFenAfter;
-    Position posBefore;
-    Position posAfter;
+    AtomicPosition posBefore;
+    AtomicPosition posAfter;
     
     SingleMoveTest(std::istringstream& issline) {
         std::string strFromSq, strToSq, strSpecial, strPromoPiece;
@@ -120,6 +121,7 @@ int main(int argc, char* argv[]) {
     std::vector<int> idFails;
     
     initialiseBbLookup();
+    initialiseAtomicMasks();
     
     // Run each test in the testSuite (parsed from EPD).
     while (std::getline(testSuite, strTest)) {

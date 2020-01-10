@@ -11,12 +11,18 @@
 
 // === position.h ===
 // Defines the internal representation of a chess position.
+// Atomic chess positions will be inherited from this, overriding makeMove/unmakeMove, and stateInfo (bitboards of captured pieces).
 
 
 // === StateInfo ===
 // A struct for irreversible info about the position, for unmaking moves.
 struct StateInfo {
-    StateInfo() = default;
+    StateInfo(Piece pc, CastlingRights cr, Square sq, int num)
+        : capturedPiece{pc}
+        , castlingRights{cr}
+        , epRights{sq}
+        , fiftyMoveNum{num}
+            { }
     
     Piece capturedPiece {NO_PIECE};
     CastlingRights castlingRights {NO_CASTLE};
@@ -84,7 +90,7 @@ class Position {
         std::string pretty() const;
         
         
-    private:
+    protected:
         // --- Class data members ---
         // Ensure state is updated correctly to maintain a valid Position!
         std::array<Bitboard, NUM_COLOURS> bbByColour {};
@@ -128,6 +134,9 @@ class Position {
         
         // --- Helper methods ---
         void addPiece(Piece pc, Square sq);
+        void addPiece(Colour co, PieceType pcty, Square sq);
+        void addPiece(int ico, int ipcty, Square sq);
+        void removePiece(Colour co, PieceType pcty, Square sq);
         void makeCastlingMove(Move mv);
         void unmakeCastlingMove(Move mv);
 };

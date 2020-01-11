@@ -10,7 +10,7 @@ void initialiseAtomicMasks() {
     for (int isq = 0; isq < NUM_SQUARES; ++isq) {
         Bitboard bb {bbFromSq(square(isq))};
         bb |= ( shiftN(bb) | shiftNE(bb) | shiftE(bb) | shiftSE(bb) |
-                shiftS(bb) | shiftSW(bb) | shiftW(bb) | shiftNW(bb) );
+               shiftS(bb) | shiftSW(bb) | shiftW(bb) | shiftNW(bb) );
         atomicMasks[isq] = bb;
     }
     return;

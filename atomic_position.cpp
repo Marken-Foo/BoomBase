@@ -20,7 +20,8 @@ void AtomicPosition::makeMove(Move mv) {
     const Colour co {sideToMove}; // assert sideToMove == getPieceColour(pc);
     const PieceType pcty {getPieceType(pc)};
     const Piece pcDest {mailbox[toSq]};
-    const bool isCapture {pcDest != NO_PIECE || isEp(mv)};
+    const bool isCapture {pcDest != NO_PIECE};
+    const bool isEp {::isEp(mv)};
     const Bitboard mask = atomicMasks[toSq];
     // Stores explosion information
     std::array<Bitboard, NUM_COLOURS> explodedByColour {};
@@ -29,7 +30,7 @@ void AtomicPosition::makeMove(Move mv) {
     // (Not castling) begin updating position; remove moved piece.
     removePiece(co, pcty, fromSq);
     
-    if (isCapture) {
+    if (isCapture || isEp) {
         // Could be capture, promotion capture, or en passant.
         // Record, then remove all units exploded.
         // (Manipulate bitboards directly; mailbox is handled shortly after.)
@@ -44,16 +45,17 @@ void AtomicPosition::makeMove(Move mv) {
             bbByColour[j] &= ~explodedByColour[j];
         }
         // But directly captured or en passant'd pawn, *is* exploded.
-        if (getPieceType(pcDest) == PAWN) {
-            explodedByColour[co] ^= toSq;
+        if (getPieceType(pcDest) == PAWN && pcDest != NO_PIECE) {
+            explodedByColour[!co] ^= toSq;
             explodedByType[PAWN] ^= toSq;
-            bbByColour[co] ^= toSq;
+            bbByColour[!co] ^= toSq;
             bbByType[PAWN] ^= toSq;
-        } else if (isEp(mv)) {
-            const Square sqEpCap {(co == WHITE) ? shiftS(toSq) : shiftN(toSq)};
-            explodedByColour[co] ^= sqEpCap;
+        }
+        if (isEp) {
+            Square sqEpCap {(co == WHITE) ? shiftS(toSq) : shiftN(toSq)};
+            explodedByColour[!co] ^= sqEpCap;
             explodedByType[PAWN] ^= sqEpCap;
-            bbByColour[co] ^= sqEpCap;
+            bbByColour[!co] ^= sqEpCap;
             bbByType[PAWN] ^= sqEpCap;
         }
         // (Now it is convenient to update the mailbox.)
@@ -74,7 +76,11 @@ void AtomicPosition::makeMove(Move mv) {
     }
     
     // Save irreversible state information in struct, *before* altering them.
-    AtomicStateInfo undoState {pcDest, castlingRights, epRights, fiftyMoveNum, explodedByColour, explodedByType};
+    // TODO: REFACTOR OUT THIS PART (AND IN UNMAKE) HERE AND IN POSITION.CPP
+    // Since castling still puts in/takes out a regular StateInfo undoState
+    
+    AtomicStateInfo undoState {pcDest, castlingRights, epRights, fiftyMoveNum,
+                               pc, explodedByColour, explodedByType};
     undoStack.push_back(undoState);
     
     // Update ep rights.
@@ -154,11 +160,17 @@ void AtomicPosition::unmakeMove(Move mv) {
     }
     const Square fromSq {getFromSq(mv)};
     const Square toSq {getToSq(mv)};
-    const Piece pc {mailbox[toSq]};
     const Colour co {!sideToMove}; // retractions are by the side without the move.
-    const PieceType pcty {getPieceType(pc)};
-    
+    const Piece pc {mailbox[toSq]}; // if move was an atomic capture, then toSq is empty, i.e. this is NO_PIECE.
+    const bool isCapture {pc == NO_PIECE};
+    const bool isEp {::isEp(mv)};
+    PieceType pcty {NO_PCTY};
+    if (!isCapture) {
+        pcty = getPieceType(pc);
+    }
     // Grab undo information off the stack. Assumes it matches the move called.
+    AtomicStateInfo undoState {undoStack.back()};
+    undoStack.pop_back();
     // std::unique_ptr<AtomicStateInfo> ptrUndoState = std::make_unique<AtomicStateInfo>(undoStack.back());
     // undoStack.pop_back();
     // AtomicStateInfo undoState {*ptrUndoState};
@@ -170,27 +182,30 @@ void AtomicPosition::unmakeMove(Move mv) {
     fiftyMoveNum = undoState.fiftyMoveNum;
     --halfmoveNum;
     
-    // Put moved unit back on original square.
-    if (isPromotion(mv)) {
+    
+    // Restore all captured and exploded units.
+    if (isCapture || isEp) {
+        const std::array<Bitboard, NUM_COLOURS> explodedByColour {undoState.bbExplodedByColour};
+        const std::array<Bitboard, NUM_PIECE_TYPES> explodedByType {undoState.bbExplodedByType};
+        
+        for (int xco = 0; xco < NUM_COLOURS; ++xco) {
+            for (int xpcty = 0; xpcty < NUM_PIECE_TYPES; ++xpcty) {
+                Bitboard bbPiece {explodedByColour[xco] & explodedByType[xpcty]};
+                while (bbPiece) {
+                    Square sq {popLsb(bbPiece)};
+                    addPiece(xco, xpcty, sq);
+                }
+            }
+        }
+        addPiece(undoState.movedPiece, fromSq);
+        
+    // If not a capture, just put unit back on original square.
+    } else if (isPromotion(mv)) {
         addPiece(co, PAWN, fromSq);
         removePiece(co, pcty, toSq);
     } else {
         addPiece(co, pcty, fromSq);
         removePiece(co, pcty, toSq);
-    }
-    
-    // Restore all captured and exploded units.
-    const std::array<Bitboard, NUM_COLOURS> explodedByColour = undoState.bbExplodedByColour;
-    const std::array<Bitboard, NUM_PIECE_TYPES> explodedByType = undoState.bbExplodedByType;
-    
-    for (int xco = 0; xco < NUM_COLOURS; ++xco) {
-        for (int xpcty = 0; xpcty < NUM_PIECE_TYPES; ++xpcty) {
-            Bitboard bbPieces {explodedByColour[xco] & explodedByType[xpcty]};
-            while (bbPieces) {
-                Square sq {popLsb(bbPieces)};
-                addPiece(xco, xpcty, sq);
-            }
-        }
     }
     return;
 }

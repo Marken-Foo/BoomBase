@@ -108,7 +108,7 @@ void Position::makeMove(Move mv) {
     const Piece pc {mailbox[fromSq]};
     const Colour co {sideToMove}; // assert sideToMove == getPieceColour(pc);
     const PieceType pcty {getPieceType(pc)};
-    // Anything on the destintion square
+    // Anything on the destination square
     const Piece pcDest {mailbox[toSq]};
     const bool isCapture {pcDest != NO_PIECE};
     
@@ -120,7 +120,6 @@ void Position::makeMove(Move mv) {
         // Regular capture is occurring (not ep)
         PieceType pctyCap {getPieceType(pcDest)};
         removePiece(!co, pctyCap, toSq);
-        // For atomic chess, explosion masking here.
     }
     if (isEp(mv)) {
         // ep capture is occurring, erase the captured pawn
@@ -140,7 +139,7 @@ void Position::makeMove(Move mv) {
     StateInfo undoState {pcDest, castlingRights, epRights, fiftyMoveNum};
     // std::unique_ptr<StateInfo> uS = std::make_unique<StateInfo>(pcDest, castlingRights, epRights, fiftyMoveNum);
     // StateInfo undoState = *uS;
-    // undoStack.push_back(undoState);
+    undoStack.push_back(undoState);
     
     // Update ep rights.
     if ((pcty == PAWN) && (fromSq & BB_OUR_2[co]) && (toSq & BB_OUR_4[co])) {

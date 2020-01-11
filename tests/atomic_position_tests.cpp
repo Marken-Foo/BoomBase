@@ -71,6 +71,8 @@ class SingleMoveTest {
         posTest.makeMove(mv);
         if (posTest != posAfter) {
             isPassed = false;
+            std::cout << strFenBefore << "\n";
+            std::cout << posTest.pretty();
         }
         return isPassed;
     }
@@ -82,6 +84,8 @@ class SingleMoveTest {
         posTest.unmakeMove(mv);
         if (posTest != posBefore) {
             isPassed = false;
+            std::cout << strFenBefore << "\n";
+            std::cout << posTest.pretty();
         }
         return isPassed;
     }

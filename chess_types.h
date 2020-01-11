@@ -73,6 +73,7 @@ inline Piece piece(Colour co, PieceType pcType) {
     );
 }
 // Useful to get the colour or type of a Piece. Can be optimised (cf Stockfish).
+// TODO: error on NO_PIECE.
 inline Colour getPieceColour(Piece pc) {
     return colour(static_cast<int>(pc)/static_cast<int>(NUM_PIECE_TYPES));
 }

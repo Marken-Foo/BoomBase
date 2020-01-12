@@ -9,15 +9,17 @@
 #include <stdexcept>
 #include <string>
 
+
 void Position::reset() {
     /// Resets Position to default. (Might want to rewrite explicitly).
+    /// 
     *this = Position(); // cheaty way out; calls default constructor!
-    mailbox.fill(NO_PIECE);
     return;
 }
 
 Position& Position::fromFen(const std::string& fenStr) {
     /// Reads a FEN string and sets up the Position accordingly.
+    /// 
     // TODO: Make it more robust in terms of accepting input.
     std::istringstream fenSs(fenStr);
     fenSs >> std::noskipws;
@@ -86,7 +88,9 @@ Position& Position::fromFen(const std::string& fenStr) {
     fenSs >> std::skipws >> fiftyMoveNum >> fullmoveNum;
     // Converting a fullmove number to halfmove number.
     // Halfmove 0 = Fullmove 1 + white to move.
-    halfmoveNum = (sideToMove == WHITE) ? 2 * fullmoveNum - 2: 2 * fullmoveNum - 1;
+    halfmoveNum = (sideToMove == WHITE)
+                  ? 2*fullmoveNum - 2
+                  : 2*fullmoveNum - 1;
     
     return *this;
 }
@@ -136,10 +140,7 @@ void Position::makeMove(Move mv) {
         addPiece(co, pcty, toSq);
     }
     // Save irreversible state information in struct, *before* altering them.
-    StateInfo undoState {pcDest, castlingRights, epRights, fiftyMoveNum};
-    // std::unique_ptr<StateInfo> uS = std::make_unique<StateInfo>(pcDest, castlingRights, epRights, fiftyMoveNum);
-    // StateInfo undoState = *uS;
-    undoStack.push_back(undoState);
+    undoStack.emplace_back(pcDest, castlingRights, epRights, fiftyMoveNum);
     
     // Update ep rights.
     if ((pcty == PAWN) && (fromSq & BB_OUR_2[co]) && (toSq & BB_OUR_4[co])) {
@@ -170,7 +171,6 @@ void Position::makeMove(Move mv) {
     // (Relevant just for certain classes of fairy chess like Circe).
     // For compatibility with most other chess programs, castling rights are 
     // considered lost if the relevant rook is captured.
-    // (For atomic chess: or if there is an adjacent explosion.)
     if (isCapture && (getPieceType(pcDest) == ROOK)) {
         // Castling rights lost on one side if that rook is removed.
         if (toSq == originalRookSquares[toIndex(CASTLE_WSHORT)]) {
@@ -208,7 +208,7 @@ void Position::unmakeMove(Move mv) {
     const Square fromSq {getFromSq(mv)};
     const Square toSq {getToSq(mv)};
     const Piece pc {mailbox[toSq]};
-    const Colour co {!sideToMove}; // retractions are by the side without the move.
+    const Colour co {!sideToMove}; // the side without the move retracts.
     const PieceType pcty {getPieceType(pc)};
     
     // Grab undo information off the stack. Assumes it matches the move called.
@@ -248,6 +248,7 @@ void Position::unmakeMove(Move mv) {
 
 std::string Position::pretty() const {
     /// Makes a human-readable string of the board represented by Position.
+    /// 
     std::array<Piece, NUM_SQUARES> posArr {};
     posArr.fill(NO_PIECE);
     std::string strOut {"+--------+\n"};
@@ -377,9 +378,7 @@ void Position::makeCastlingMove(Move mv) {
     mailbox[sqRTo] = piece(co, ROOK);
     
     // Save irreversible information in struct, *before* altering them.
-    const StateInfo undoState {NO_PIECE, castlingRights,
-                               epRights, fiftyMoveNum};
-    undoStack.push_back(undoState);
+    undoStack.emplace_back(NO_PIECE, castlingRights, epRights, fiftyMoveNum);
     // Update ep and castling rights.
     epRights = NO_SQ;
     castlingRights &= (co == WHITE) ? ~CASTLE_WHITE : ~CASTLE_BLACK;

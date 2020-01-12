@@ -4,6 +4,7 @@
 #include "atomic_capture_masks.h" 
 #include "atomic_position.h"
 
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -11,8 +12,15 @@
 #include <string>
 #include <vector>
 
-// test format:
-// [position];[fromSq,toSq,special,promopiece];[final position]
+// Test format (each line):
+// [position];[fromSq] [toSq] [special] [promoPiece];[finalPosition]
+// [position] and [finalPosition] are given in full FEN.
+// [fromSq] and [toSq] are given in lowercase algebraic, e.g. "a2" or "d7".
+// [special] is either "-", "promo", "castle" or "ep".
+// [promoPiece] is "N", "B", "R", "Q" or "-" (only for nonpromotions).
+// 
+// Example:
+// 4k3/8/8/8/8/8/8/4K2R w K - 0 1;e1 h1 castle -;4k3/8/8/8/8/8/8/5RK1 b - - 0 1
 
 class SingleMoveTest {
     public:
@@ -127,6 +135,8 @@ int main(int argc, char* argv[]) {
     initialiseBbLookup();
     initialiseAtomicMasks();
     
+    
+    auto timeStart = std::chrono::steady_clock::now();
     // Run each test in the testSuite (parsed from EPD).
     while (std::getline(testSuite, strTest)) {
         ++numTests;
@@ -143,6 +153,8 @@ int main(int argc, char* argv[]) {
             idFails.push_back(testId);
         }
     }
+    auto timeEnd = std::chrono::steady_clock::now();
+    auto timeTaken = timeEnd - timeStart;
     testSuite.close();
     
     // Print testing summary
@@ -156,13 +168,21 @@ int main(int argc, char* argv[]) {
             std::cout << " " << std::to_string(idFail);
         }
     }
+    std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
+    
+    
+    AtomicPosition apos;
+    apos.fromFen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq");
+    apos.makeMove(buildMove(SQ_A1, SQ_A2));
+    apos.makeMove(buildMove(SQ_H8, SQ_H7));
+    apos.makeMove(buildCastling(SQ_E1, SQ_H1));
+    apos.makeMove(buildMove(SQ_H7, SQ_H6));
+    apos.makeMove(buildMove(SQ_A2, SQ_A3));
+    apos.makeMove(buildCastling(SQ_E8, SQ_A8));
+    std::cout << std::to_string(apos.explosionStack.size()) << "\n";
+    
     return 0;
 }
-
-
-// Test equality function is working correctly
-// > initialise 2 positions from FENs differing in 50/half counters (expect equal)
-// > test that equality is reflexive and symmetric
 
 // Changes needed for atomic chess:
 // > Captures: check exploded pawns/nonpawns are correct.

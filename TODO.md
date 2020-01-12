@@ -3,6 +3,7 @@
 ## Change backend to play atomic ##
 
 - Make changes to movegen and Position for atomic
+    - Change StateInfo and undoStack to work by pointers to try and salvage ortho/atomic switchability
 - Test with perft against FOX's perft (in shakmaty's github repo, the Rust chess engine).
 - Implement checkmate and stalemate checking
 - Implement insufficient material checking
@@ -30,6 +31,7 @@
 ## Less urgent (nice-to-have) ##
 
 - Improve test suites (lower priority)
+    - Chronometry (time the tests)
     - Negative tests (ones expected to fail) can be given?
     - Output can be prettier
     - More details can be given (summary of failed tests, output and expected output)

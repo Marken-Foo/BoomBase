@@ -3,6 +3,7 @@
 #include "move.h"
 #include "position.h"
 
+#include <chrono>
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
@@ -10,8 +11,15 @@
 #include <string>
 #include <vector>
 
-// test format:
-// [position];[fromSq,toSq,special,promopiece];[final position]
+// Test format (each line):
+// [position];[fromSq] [toSq] [special] [promoPiece];[finalPosition]
+// [position] and [finalPosition] are given in full FEN.
+// [fromSq] and [toSq] are given in lowercase algebraic, e.g. "a2" or "d7".
+// [special] is either "-", "promo", "castle" or "ep".
+// [promoPiece] is "N", "B", "R", "Q" or "-" (only for nonpromotions).
+// 
+// Example:
+// 4k3/8/8/8/8/8/8/4K2R w K - 0 1;e1 h1 castle -;4k3/8/8/8/8/8/8/5RK1 b - - 0 1
 
 class SingleMoveTest {
     public:
@@ -37,7 +45,7 @@ class SingleMoveTest {
         // initialise move
         Square fromSq = square(strFromSq);
         Square toSq = square(strToSq);
-        PieceType pcty = NO_PCTY; // will error if falls to makePromotion
+        PieceType pcty = NO_PCTY; // will silently bug if falls to makePromotion
         
         if (strPromoPiece == "-") { //do nothing
         } else if (strPromoPiece == "N") {
@@ -121,6 +129,7 @@ int main(int argc, char* argv[]) {
     
     initialiseBbLookup();
     
+    auto timeStart = std::chrono::steady_clock::now();
     // Run each test in the testSuite (parsed from EPD).
     while (std::getline(testSuite, strTest)) {
         ++numTests;
@@ -137,6 +146,8 @@ int main(int argc, char* argv[]) {
             idFails.push_back(testId);
         }
     }
+    auto timeEnd = std::chrono::steady_clock::now();
+    auto timeTaken = timeEnd - timeStart;
     testSuite.close();
     
     // Print testing summary
@@ -150,16 +161,6 @@ int main(int argc, char* argv[]) {
             std::cout << " " << std::to_string(idFail);
         }
     }
+    std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
     return 0;
 }
-
-
-// Test equality function is working correctly
-// > initialise 2 positions from FENs differing in 50/half counters (expect equal)
-// > test that equality is reflexive and symmetric
-
-// Changes needed for atomic chess:
-// > Captures: check exploded pawns/nonpawns are correct.
-// > Captures: check capturer/capturee pawns are destroyed.
-// > Promocaps: same deal
-// > Castlings: check exploded rooks cause castling rights to be lost.

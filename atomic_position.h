@@ -8,21 +8,6 @@
 #include <array>
 #include <deque>
 
-struct AtomicStateInfo : StateInfo {
-    AtomicStateInfo(Piece pcDest, CastlingRights cr, Square sq, int num,
-                    Piece pc,
-                    std::array<Bitboard, NUM_COLOURS> bbExCo,
-                    std::array<Bitboard, NUM_PIECE_TYPES> bbExPcty)
-        : StateInfo{pcDest, cr, sq, num}
-        , movedPiece{pc}
-        , bbExplodedByColour{bbExCo}
-        , bbExplodedByType{bbExPcty}
-    { }
-    
-    Piece movedPiece {NO_PIECE};
-    std::array<Bitboard, NUM_COLOURS> bbExplodedByColour {};
-    std::array<Bitboard, NUM_PIECE_TYPES> bbExplodedByType {};
-};
 
 class AtomicPosition : public Position {
     public:
@@ -30,7 +15,22 @@ class AtomicPosition : public Position {
     void unmakeMove(Move mv);
     
     protected:
-    std::deque<AtomicStateInfo> undoStack {};
+    struct ExplosionInfo;
+    std::deque<ExplosionInfo> explosionStack {};
+    
+    struct ExplosionInfo {
+        ExplosionInfo(Piece pc,
+                      std::array<Bitboard, NUM_COLOURS> bbExByCo,
+                      std::array<Bitboard, NUM_PIECE_TYPES> bbExByPcty)
+            : movedPiece{pc}
+            , bbExplosionByColour{bbExByCo}
+            , bbExplosionByType{bbExByPcty}
+        { }
+        
+        Piece movedPiece {NO_PIECE};
+        std::array<Bitboard, NUM_COLOURS> bbExplosionByColour {};
+        std::array<Bitboard, NUM_PIECE_TYPES> bbExplosionByType {};
+    };
 };
 
 #endif //#ifndef ATOMIC_POSITION_INCLUDED

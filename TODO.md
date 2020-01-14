@@ -3,6 +3,10 @@
 ## Change backend to play atomic ##
 
 - Make changes to movegen for atomic
+    - Replace the perft_tests with new_perft_tests which works now
+        - Includes renaming/deleting files, changing the makefile.
+    - Refactor out interface from move_validator.h, change includes in relevant files
+    - Create new classes for atomic, and atomic perft tests
 - Test with perft against FOX's perft (in shakmaty's github repo, the Rust chess engine).
 - Implement checkmate and stalemate checking
 - Implement insufficient material checking

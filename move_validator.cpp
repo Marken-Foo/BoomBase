@@ -11,8 +11,12 @@
 #include <memory>
 
 void MoveValidator::setVariant(Variant var) {
+    // TODO: ideally, MoveValidator is always in a good state
+    // then the first branch is
+    // if (currentVariant == var) {[do nothing];}
+    // to avoid wasteful creation/deletion of Rules objects
     if (var == ORTHO) {
-        rules.reset(new OrthoMoveRules());
+        rules.reset(new OrthoMoveRules()); //can I not use new?
     } /* else if (var == ATOMIC) {
         rules = make_unique<AtomicMoveRules>();
     } */

@@ -27,6 +27,7 @@ enum Variant {
     ORTHO, ATOMIC
 };
 
+//TODO: Split this interface into its own file.
 class IMoveRules {
     // An abstract class for the concrete logic-containing objects.
     public:
@@ -98,7 +99,7 @@ class MoveValidator {
 
 
 /* 
-// SPLIT TO ANOTHER FILE
+// TODO: SPLIT TO ANOTHER FILE
 class AtomicMoveRules : IMoveRules{
     // The rules of atomic chess.
     public:

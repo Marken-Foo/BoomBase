@@ -30,7 +30,7 @@ enum Variant {
 class IMoveRules {
     // An abstract class for the concrete logic-containing objects.
     public:
-    virtual ~IMoveRules() {};
+    virtual ~IMoveRules() {}
     
     virtual bool isLegal(Move mv, Position& pos) = 0;
     virtual bool isInCheck(Colour co, const Position& pos) = 0;

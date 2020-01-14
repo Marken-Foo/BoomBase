@@ -11,9 +11,7 @@
 #include <memory>
 
 void MoveValidator::setVariant(Variant var) {
-    if (currentVariant == var) {
-        // do nothing
-    } else if (var == ORTHO) {
+    if (var == ORTHO) {
         rules.reset(new OrthoMoveRules());
     } /* else if (var == ATOMIC) {
         rules = make_unique<AtomicMoveRules>();

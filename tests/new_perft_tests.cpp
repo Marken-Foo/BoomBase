@@ -2,6 +2,7 @@
 #include "move_validator.h"
 #include "position.h"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -89,6 +90,7 @@ int main(int argc, char* argv[]) {
     
     initialiseBbLookup();
     
+    auto timeStart = std::chrono::steady_clock::now();
     // Run each test in the testSuite (parsed from EPD).
     while (std::getline(testSuite, strTest)) {
         ++numTests;
@@ -103,6 +105,8 @@ int main(int argc, char* argv[]) {
         }
         std::cout << "\n";
     }
+    auto timeEnd = std::chrono::steady_clock::now();
+    auto timeTaken = timeEnd - timeStart;
     testSuite.close();
     
     // Print testing summary
@@ -116,5 +120,6 @@ int main(int argc, char* argv[]) {
             std::cout << " " << std::to_string(idFail);
         }
     }
+    std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
     return 0;
 }

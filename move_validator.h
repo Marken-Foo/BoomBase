@@ -2,6 +2,7 @@
 #define MOVE_VALIDATOR_INCLUDED
 
 #include "chess_types.h"
+#include "bitboard.h"
 #include "move.h"
 
 #include <cstdint>
@@ -21,52 +22,18 @@
 // all the criteria, promotion to enemy knight...)
 
 class Position;
-class IMoveRules;
 
 enum Variant {
     ORTHO, ATOMIC
 };
 
-class MoveValidator {
-    // A class that contains static methods to validate a move, given a Move and
-    // a Position& or uPosition*. Delegates actual checking to specialised classes
-    // (Command? Strategy? W/e)
-    public:
-    MoveValidator() {
-        setRules(ORTHO);
-    }
-    
-    MoveValidator(Variant var) {
-        setRules(var);
-    }
-    
-    void setRules(Variant var);
-    void getRules() {return currentVariant;}
-    
-    bool isLegal(Move mv, Position& pos) {
-        return rules->isLegal(mv, pos);
-    }
-    bool isInCheck(Colour co, Position& pos) {
-        return rules->isInCheck(mv, pos);
-    }
-    Movelist generateLegalMoves(Position& pos) {
-        return rules->generateLegalMoves(pos);
-    }
-    
-    uint64_t perft(int depth, Position& pos);
-    
-    protected:
-    Variant currentVariant;
-    std::unique_ptr<IMoveRules> rules;
-};
-
 class IMoveRules {
     // An abstract class for the concrete logic-containing objects.
     public:
-    virtual ~IMoveRules();
+    virtual ~IMoveRules() {};
     
     virtual bool isLegal(Move mv, Position& pos) = 0;
-    virtual bool isInCheck(Colour co, Position& pos) = 0;
+    virtual bool isInCheck(Colour co, const Position& pos) = 0;
     virtual Movelist generateLegalMoves(Position& pos) = 0;
     
     protected:
@@ -93,6 +60,40 @@ class IMoveRules {
     bool isCastlingValid(CastlingRights cr, const Position& pos);
     Movelist& addCastlingMoves(Movelist& mvlist, Colour co, const Position& pos);
 };
+
+class MoveValidator {
+    // A class that contains static methods to validate a move, given a Move and
+    // a Position& or uPosition*. Delegates actual checking to specialised classes
+    // (Command? Strategy? W/e)
+    public:
+    MoveValidator() {
+        setVariant(ORTHO);
+    }
+    
+    MoveValidator(Variant var) {
+        setVariant(var);
+    }
+    
+    void setVariant(Variant var);
+    Variant getVariant() {return currentVariant;}
+    
+    bool isLegal(Move mv, Position& pos) {
+        return rules->isLegal(mv, pos);
+    }
+    bool isInCheck(Colour co, Position& pos) {
+        return rules->isInCheck(co, pos);
+    }
+    Movelist generateLegalMoves(Position& pos) {
+        return rules->generateLegalMoves(pos);
+    }
+    
+    uint64_t perft(int depth, Position& pos);
+    
+    protected:
+    Variant currentVariant;
+    std::unique_ptr<IMoveRules> rules;
+};
+
 
 
 

@@ -3,19 +3,21 @@
 #include "chess_types.h"
 #include "move.h"
 #include "bitboard.h"
+#include "ortho_move_rules.h"
 #include "bitboard_lookup.h"
 #include "position.h"
 
 #include <cstdint>
+#include <memory>
 
-void MoveValidator::setRules(Variant var) {
+void MoveValidator::setVariant(Variant var) {
     if (currentVariant == var) {
-        break;
+        // do nothing
     } else if (var == ORTHO) {
-        rules = make_unique<OrthoMoveRules>();
-    } else if (var == ATOMIC) {
+        rules.reset(new OrthoMoveRules());
+    } /* else if (var == ATOMIC) {
         rules = make_unique<AtomicMoveRules>();
-    }
+    } */
     currentVariant = var;
     return;
 }
@@ -42,7 +44,7 @@ uint64_t MoveValidator::perft(int depth, Position& pos) {
 
 // IMoveRules
 Bitboard IMoveRules::attacksFrom(Square sq, Colour co, PieceType pcty,
-                                 Position& pos) {
+                                 const Position& pos) {
     /// Returns bitboard of squares attacked by a given piece type placed on a
     /// given square.
     Bitboard bbAttacked {0};

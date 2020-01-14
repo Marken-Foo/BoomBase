@@ -3,6 +3,7 @@
 #include "chess_types.h"
 #include "move.h"
 #include "bitboard.h"
+#include "position.h"
 
 
 bool OrthoMoveRules::isInCheck(Colour co, const Position& pos) {

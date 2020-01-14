@@ -12,6 +12,7 @@
 
 class SingleTest {
     /// Class representing a single test (position) from a single line in EPD.
+    /// 
     public:
     std::string strFen;
     std::vector<int> depths;
@@ -39,7 +40,7 @@ class SingleTest {
     
     bool run(int maxDepth) {
         /// Runs perft to all depths smaller than maxDepth, printing results.
-        
+        /// 
         // TODO: can separate printing from logic.
         bool isTestCorrect = true;
         std::cout << "Position: " << strFen << "\n";

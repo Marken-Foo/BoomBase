@@ -49,6 +49,7 @@ void AtomicPosition::makeMove(Move mv) {
             bbByColour[j] &= ~explosionByColour[j];
         }
         // But directly captured or en passant'd pawn, *is* exploded.
+        // For en passant, pcDest will be NO_PIECE!
         if (getPieceType(pcDest) == PAWN && pcDest != NO_PIECE) {
             explosionByColour[!co] ^= toSq;
             explosionByType[PAWN] ^= toSq;
@@ -152,10 +153,9 @@ void AtomicPosition::unmakeMove(Move mv) {
     const Square fromSq {getFromSq(mv)};
     const Square toSq {getToSq(mv)};
     const Colour co {!sideToMove}; // the side without the move retracts.
-    // if move was an atomic capture, then toSq is empty and pc is NO_PIECE.
+    // if move was a capture or ep, then toSq is empty and pc is NO_PIECE.
     const Piece pc {mailbox[toSq]};
-    const bool isCapture {pc == NO_PIECE};
-    const bool isEp {::isEp(mv)};
+    const bool isCaptureOrEp {pc == NO_PIECE};
     PieceType pcty {NO_PCTY};
     if (!isCapture) {
         pcty = getPieceType(pc);
@@ -174,7 +174,7 @@ void AtomicPosition::unmakeMove(Move mv) {
     --halfmoveNum;
     
     // Restore all captured and exploded units.
-    if (isCapture || isEp) {
+    if (isCaptureOrEp) {
         const std::array<Bitboard, NUM_COLOURS> explosionByColour {
             explosion.bbExplosionByColour
         };

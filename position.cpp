@@ -1,4 +1,5 @@
 #include "position.h"
+
 #include "chess_types.h"
 #include "bitboard.h"
 
@@ -13,7 +14,7 @@
 void Position::reset() {
     /// Resets Position to default. (Might want to rewrite explicitly).
     /// 
-    *this = Position(); // cheaty way out; calls default constructor!
+    *this = Position(); // cheaty way out; calls constructor!
     return;
 }
 

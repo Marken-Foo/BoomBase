@@ -37,18 +37,30 @@ class Position {
     Bitboard getUnitsBb(Colour co, PieceType pcty) const {
         return bbByColour[co] & bbByType[pcty];
     }
-    Bitboard getUnitsBb(Colour co) const {return bbByColour[co];}
-    Bitboard getUnitsBb(PieceType pcty) const {return bbByType[pcty];}
+    Bitboard getUnitsBb(Colour co) const {
+        return bbByColour[co];
+    }
+    Bitboard getUnitsBb(PieceType pcty) const {
+        return bbByType[pcty];
+    }
     Bitboard getUnitsBb() const {
         Bitboard bb {0};
         for (int ico = 0; ico < NUM_COLOURS; ++ico) {bb |= bbByColour[ico];}
         return bb;
     }
-    std::array<Piece, NUM_SQUARES> getMailbox() const {return mailbox;}
+    std::array<Piece, NUM_SQUARES> getMailbox() const {
+        return mailbox;
+    }
     
-    Colour getSideToMove() const {return sideToMove;}
-    CastlingRights getCastlingRights() const {return castlingRights;}
-    Square getEpSq() const {return epRights;}
+    Colour getSideToMove() const {
+        return sideToMove;
+    }
+    CastlingRights getCastlingRights() const {
+        return castlingRights;
+    }
+    Square getEpSq() const {
+        return epRights;
+    }
     
     // getters for info to execute castling
     // **only to be called with "basic" castling rights K, Q, k, or q!**

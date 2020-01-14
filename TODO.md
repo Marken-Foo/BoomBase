@@ -2,8 +2,7 @@
 
 ## Change backend to play atomic ##
 
-- Make changes to movegen and Position for atomic
-    - Change StateInfo and undoStack to work by pointers to try and salvage ortho/atomic switchability
+- Make changes to movegen for atomic
 - Test with perft against FOX's perft (in shakmaty's github repo, the Rust chess engine).
 - Implement checkmate and stalemate checking
 - Implement insufficient material checking
@@ -25,13 +24,17 @@
 
 ## Miscellaneous improvements ##
 
-- Write unit tests for movegen.h (lookup table checks)
+- Write unit tests for movegen.h (lookup table checks) (?)
 
 
 ## Less urgent (nice-to-have) ##
 
+- Refactor Position to be more modular (turn Position into an interface + data and common logic, and delegate the business logic of makeMove() and unmakeMove() to specialised MoveMaker? classes. (Strategy? Command?))
+    - i.e. OrthoMoveMaker implements MoveMaker, AtomicMoveMaker implements MoveMaker, where MoveMaker is simply an interface of two functions, makeMove() and unmakeMove().
+    - Why? This would make it easier to add more variant support at a much later stage.
+    - Hence why it's not an urgent update...
+
 - Improve test suites (lower priority)
-    - Chronometry (time the tests)
     - Negative tests (ones expected to fail) can be given?
     - Output can be prettier
     - More details can be given (summary of failed tests, output and expected output)

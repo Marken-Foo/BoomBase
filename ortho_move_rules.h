@@ -2,7 +2,7 @@
 #define ORTHO_MOVE_RULES_INCLUDED
 
 #include "chess_types.h"
-#include "move_validator.h"
+#include "move_rules.h"
 #include "move.h"
 
 class Position;

@@ -5,13 +5,12 @@ CXX = g++
 CXXFLAGS = -I..
 
 # for perft_tests
-SRCPERFT = perft_tests.cpp position.cpp movegen.cpp bitboard_lookup.cpp
+SRCPERFT = perft_tests.cpp move_validator.cpp position.cpp bitboard_lookup.cpp move_rules.cpp ortho_move_rules.cpp
 # for position_tests
 SRCPOST = position_tests.cpp position.cpp bitboard_lookup.cpp
 SRCATOMPOST = atomic_position_tests.cpp atomic_position.cpp position.cpp atomic_capture_masks.cpp bitboard_lookup.cpp
-SRCNEWPERFT = new_perft_tests.cpp move_validator.cpp position.cpp bitboard_lookup.cpp ortho_move_rules.cpp
 
-SRCFILES = $(sort $(SRCPERFT) $(SRCPOST) $(SRCATOMPOST) $(SRCNEWPERFT))
+SRCFILES = $(sort $(SRCPERFT) $(SRCPOST) $(SRCATOMPOST))
 OBJFILES = $(SRCFILES:%.cpp=%.o)
 
 perft_tests : $(SRCPERFT:%.cpp=%.o)
@@ -21,9 +20,6 @@ position_tests : $(SRCPOST:%.cpp=%.o)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 atomic_position_tests : $(SRCATOMPOST:%.cpp=%.o)
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-new_perft_tests : $(SRCNEWPERFT:%.cpp=%.o)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Auto-dependency generation

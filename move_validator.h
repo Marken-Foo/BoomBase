@@ -2,8 +2,8 @@
 #define MOVE_VALIDATOR_INCLUDED
 
 #include "chess_types.h"
-#include "bitboard.h"
 #include "move.h"
+#include "move_rules.h"
 
 #include <cstdint>
 #include <memory>
@@ -27,45 +27,9 @@ enum Variant {
     ORTHO, ATOMIC
 };
 
-//TODO: Split this interface into its own file.
-class IMoveRules {
-    // An abstract class for the concrete logic-containing objects.
-    public:
-    virtual ~IMoveRules() {}
-    
-    virtual bool isLegal(Move mv, Position& pos) = 0;
-    virtual bool isInCheck(Colour co, const Position& pos) = 0;
-    virtual Movelist generateLegalMoves(Position& pos) = 0;
-    
-    protected:
-    IMoveRules() {}
-    IMoveRules(const IMoveRules&) {}
-    IMoveRules& operator=(const IMoveRules&) {return *this;}
-    
-    // Code common to most chess variants
-    Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos);
-    Bitboard attacksTo(Square sq, Colour co, const Position& pos);
-    bool isAttacked(Square sq, Colour co, const Position& pos);
-    
-    // Piece moves
-    Movelist& addKingMoves(Movelist& mvlist, Colour co, const Position& pos);
-    Movelist& addKnightMoves(Movelist& mvlist, Colour co, const Position& pos);
-    Movelist& addBishopMoves(Movelist& mvlist, Colour co, const Position& pos);
-    Movelist& addRookMoves(Movelist& mvlist, Colour co, const Position& pos);
-    Movelist& addQueenMoves(Movelist& mvlist, Colour co, const Position& pos);
-
-    Movelist& addPawnAttacks(Movelist& mvlist, Colour co, const Position& pos);
-    Movelist& addPawnMoves(Movelist& mvlist, Colour co, const Position& pos);
-    Movelist& addEpMoves(Movelist& mvlist, Colour co, const Position& pos);
-
-    bool isCastlingValid(CastlingRights cr, const Position& pos);
-    Movelist& addCastlingMoves(Movelist& mvlist, Colour co, const Position& pos);
-};
-
 class MoveValidator {
     // A class that contains static methods to validate a move, given a Move and
-    // a Position& or uPosition*. Delegates actual checking to specialised classes
-    // (Command? Strategy? W/e)
+    // a Position. Delegates actual checking to specialised classes.
     public:
     MoveValidator() {
         setVariant(ORTHO);

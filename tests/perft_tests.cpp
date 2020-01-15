@@ -1,5 +1,5 @@
 #include "bitboard_lookup.h"
-#include "movegen.h"
+#include "move_validator.h"
 #include "position.h"
 
 #include <chrono>
@@ -18,6 +18,7 @@ class SingleTest {
     std::string strFen;
     std::vector<int> depths;
     std::vector<uint64_t> correctPerfts;
+    MoveValidator arbiter {ORTHO};
     
     SingleTest(std::istringstream& issline) {
         /// Parse a single line passed from EPD.
@@ -52,7 +53,7 @@ class SingleTest {
                 continue;
             }
             pos.fromFen(strFen);
-            uint64_t res = perft(depths[i], pos);
+            uint64_t res = arbiter.perft(depths[i], pos);
             uint64_t check = correctPerfts[i];
             std::cout << "perft at depth " << std::to_string(depths[i]) << ": "
                       << std::to_string(res)

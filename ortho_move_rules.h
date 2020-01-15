@@ -16,4 +16,5 @@ class OrthoMoveRules : public IMoveRules {
     bool isInCheck(Colour co, const Position& pos);
     Movelist generateLegalMoves(Position& pos);
 };
+
 #endif //#ifndef ORTHO_MOVE_RULES_INCLUDED

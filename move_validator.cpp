@@ -3,6 +3,8 @@
 #include "chess_types.h"
 #include "move.h"
 #include "ortho_move_rules.h"
+#include "atomic_move_rules.h"
+
 #include "position.h"
 
 #include <cstdint>
@@ -12,9 +14,9 @@ void MoveValidator::setVariant(Variant var) {
     // TODO: avoid wasteful creation/deletion of MoveRules objects
     if (var == ORTHO) {
         rules.reset(new OrthoMoveRules());
-    } /* else if (var == ATOMIC) {
-        rules = make_unique<AtomicMoveRules>();
-    } */
+    } else if (var == ATOMIC) {
+        rules.reset(new AtomicMoveRules());
+    }
     currentVariant = var;
     return;
 }

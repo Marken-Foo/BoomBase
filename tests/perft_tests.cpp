@@ -20,7 +20,7 @@ class SingleTest {
     std::vector<uint64_t> correctPerfts;
     MoveValidator arbiter {ORTHO};
     
-    SingleTest(std::istringstream& issline) {
+    SingleTest(std::istringstream& issline, Variant var) : arbiter(var) {
         /// Parse a single line passed from EPD.
         /// Each line should consist of the full FEN description of the position
         /// followed by substrings of the form "D[depth] [perft]", separated by
@@ -70,9 +70,9 @@ class SingleTest {
 
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
+    if (argc != 3 && argc != 4) {
         std::cout << "Run the perft tests with the command [filename] "
-            "[EPD file path] [Maximum depth] (all arguments required).\n";
+            "[EPD file path] [Maximum depth]\n" "Optional argument [] for atomic.\n";
         return 0;
     }
     
@@ -87,6 +87,7 @@ int main(int argc, char* argv[]) {
     int testId = 0;
     int numTests = 0;
     std::vector<int> idFails;
+    Variant var {argc == 3 ? ORTHO : ATOMIC};
     
     initialiseBbLookup();
     
@@ -97,7 +98,7 @@ int main(int argc, char* argv[]) {
         ++testId;
         bool isTestCorrect = true;
         std::istringstream iss {strTest};
-        SingleTest test {iss};
+        SingleTest test {iss, var};
         std::cout << "======= Test " << std::to_string(testId) << " =======\n";
         isTestCorrect = test.run(maxDepth);
         if (!isTestCorrect) {
@@ -119,6 +120,7 @@ int main(int argc, char* argv[]) {
         for (int idFail: idFails) {
             std::cout << " " << std::to_string(idFail);
         }
+        std::cout << "\n";
     }
     std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
     return 0;

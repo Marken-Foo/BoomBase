@@ -18,7 +18,7 @@ bool OrthoMoveRules::isLegal(Move mv, Position& pos) {
     /// Test if making a move would leave one's own royalty in check.
     /// Assumes move is valid.
     // For eventual speedup logic can be improved from naive make-unmake-make.
-    Colour co {pos.getSideToMove()}; // is this fine? (why not pass as arg?)
+    Colour co {pos.getSideToMove()};
     pos.makeMove(mv);
     bool isSuicide {isInCheck(co, pos)};
     pos.unmakeMove(mv);

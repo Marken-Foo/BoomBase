@@ -10,9 +10,9 @@
 #include <deque>
 
 // === position.h ===
-// Defines the internal representation of a chess position.
-
-// === Position class ===
+// An abstract class defining the internal representation of a "physical" chess
+// position, and able to make/unmake moves supplied by an external source.
+//
 // It knows the:
 // - Piece location, in bitboard and mailbox form
 // - Side to move
@@ -23,14 +23,22 @@
 //
 // In addition, it can make/unmake Moves given to it, changing its state
 // accordingly.
+// Ensure state is updated correctly to maintain a valid Position!
 
 class Position {
+    // Making/unmaking moves and resetting all member variables (including
+    // subclass-specific ones) are not part of the physical position, and depend
+    // on the variant.
+    public:
+    virtual void makeMove(Move mv) = 0;
+    virtual void unmakeMove(Move mv) = 0;
+    virtual void reset() = 0;
+    
     public:
     Position() {
         mailbox.fill(NO_PIECE);
     }
     
-    void reset();
     Position& fromFen(const std::string& fenStr);
     
     // --- Getters ---        
@@ -77,11 +85,6 @@ class Position {
         return originalKingSquares[toIndex(cr)];
     }
     
-    // --- Move making/unmaking ---
-    void makeMove(Move mv);
-    void unmakeMove(Move mv);
-    
-    // --- Other ---
     // Turn position to printable string
     std::string pretty() const;
     
@@ -90,7 +93,6 @@ class Position {
     protected:
     struct StateInfo;
     // --- Class data members ---
-    // Ensure state is updated correctly to maintain a valid Position!
     std::array<Bitboard, NUM_COLOURS> bbByColour {};
     std::array<Bitboard, NUM_PIECE_TYPES> bbByType {};
     std::array<Piece, NUM_SQUARES> mailbox {};
@@ -138,7 +140,6 @@ class Position {
     void makeCastlingMove(Move mv);
     void unmakeCastlingMove(Move mv);
     
-    // === StateInfo ===
     // A struct for irreversible info about the position, for unmaking moves.
     struct StateInfo {
         StateInfo(Piece pc, CastlingRights cr, Square sq, int num50)
@@ -155,7 +156,6 @@ class Position {
     };
 };
 
-
 inline bool operator==(const Position& lhs, const Position& rhs) {
     /// Default operator override.
     /// Two Positions are the same if they are the same "chess position". This
@@ -165,6 +165,8 @@ inline bool operator==(const Position& lhs, const Position& rhs) {
     /// Note: Positions differing by an en passant capture which is pseudolegal
     /// but not legal due to e.g. a pin, are considered different here but
     /// identical under FIDE.
+    /// Note: Positions of which are "physically" identical but of different
+    /// variants are considered identical.
     
     if (lhs.getMailbox() != rhs.getMailbox()) {
         return false;

@@ -1,6 +1,8 @@
 #include "bitboard_lookup.h"
 #include "move_validator.h"
 #include "position.h"
+#include "ortho_position.h"
+#include "atomic_position.h"
 
 #include <chrono>
 #include <cstdint>
@@ -46,7 +48,7 @@ class SingleTest {
         // TODO: can separate printing from logic.
         bool isTestCorrect = true;
         std::cout << "Position: " << strFen << "\n";
-        Position pos;
+        OrthoPosition pos;
         int size = depths.size();
         for (int i = 0; i < size ; ++i) {
             if (depths[i] > maxDepth) {

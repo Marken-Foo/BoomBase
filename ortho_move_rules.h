@@ -12,14 +12,15 @@ class OrthoMoveRules : public IMoveRules {
     public:
     OrthoMoveRules() = default;
     
-    bool isLegal(Move mv, Position& pos);
-    bool isInCheck(Colour co, const Position& pos);
-    Movelist generateLegalMoves(Position& pos);
+    bool isLegal(Move mv, Position& pos) override;
+    bool isInCheck(Colour co, const Position& pos) override;
+    Movelist generateLegalMoves(Position& pos) override;
     
     protected:
+    bool isAttacked(Square sq, Colour co, const Position& pos) override;
+    
     Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos);
     Bitboard attacksTo(Square sq, Colour co, const Position& pos);
-    bool isAttacked(Square sq, Colour co, const Position& pos);
 };
 
 #endif //#ifndef ORTHO_MOVE_RULES_INCLUDED

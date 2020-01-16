@@ -2,6 +2,7 @@
 #include "chess_types.h"
 #include "move.h"
 #include "position.h"
+#include "ortho_position.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -23,12 +24,12 @@
 
 class SingleMoveTest {
     public:
-    Position posTest;
+    OrthoPosition posTest;
     Move mv;
     
     std::string strFenBefore, strFenAfter;
-    Position posBefore;
-    Position posAfter;
+    OrthoPosition posBefore;
+    OrthoPosition posAfter;
     
     SingleMoveTest(std::istringstream& issline) {
         std::string strFromSq, strToSq, strSpecial, strPromoPiece;

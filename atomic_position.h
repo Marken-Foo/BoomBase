@@ -11,8 +11,9 @@
 
 class AtomicPosition : public Position {
     public:
-    void makeMove(Move mv);
-    void unmakeMove(Move mv);
+    void makeMove(Move mv) override;
+    void unmakeMove(Move mv) override;
+    void reset() override;
     
     protected:
     struct ExplosionInfo;

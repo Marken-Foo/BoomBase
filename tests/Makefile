@@ -5,9 +5,9 @@ CXX = g++
 CXXFLAGS = -I..
 
 # for perft_tests
-SRCPERFT = perft_tests.cpp move_validator.cpp position.cpp bitboard_lookup.cpp move_rules.cpp ortho_move_rules.cpp atomic_move_rules.cpp
+SRCPERFT = perft_tests.cpp move_validator.cpp position.cpp ortho_position.cpp bitboard_lookup.cpp move_rules.cpp ortho_move_rules.cpp atomic_move_rules.cpp
 # for position_tests
-SRCPOST = position_tests.cpp position.cpp bitboard_lookup.cpp
+SRCPOST = position_tests.cpp position.cpp ortho_position.cpp bitboard_lookup.cpp
 SRCATOMPOST = atomic_position_tests.cpp atomic_position.cpp position.cpp atomic_capture_masks.cpp bitboard_lookup.cpp
 
 SRCFILES = $(sort $(SRCPERFT) $(SRCPOST) $(SRCATOMPOST))

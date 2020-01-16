@@ -11,7 +11,8 @@
 class Position;
 
 class IMoveRules {
-    // An abstract class for the concrete logic-containing objects.
+    /// An abstract class for the concrete logic-containing rules objects.
+    /// These objects will be able to judge move legality of a Position.
     public:
     virtual ~IMoveRules() {}
     
@@ -23,6 +24,9 @@ class IMoveRules {
     IMoveRules() {}
     IMoveRules(const IMoveRules&) {}
     IMoveRules& operator=(const IMoveRules&) {return *this;}
+    
+    // "Attacks" depend on the variant.
+    virtual bool isAttacked(Square sq, Colour co, const Position& pos) = 0;
     
     // Code common to most chess variants
     // (Regular) piece moves are independent of variant
@@ -39,10 +43,6 @@ class IMoveRules {
     // Castling validation needs to know which squares are attacked.
     bool isCastlingValid(CastlingRights cr, const Position& pos);
     Movelist& addCastlingMoves(Movelist& mvlist, Colour co, const Position& pos);
-    // But "attacks" are dependent on the variant.
-    virtual Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos) = 0;
-    virtual Bitboard attacksTo(Square sq, Colour co, const Position& pos) = 0;
-    virtual bool isAttacked(Square sq, Colour co, const Position& pos) = 0;
 };
 
 #endif //#I_MOVE_RULES_INCLUDED

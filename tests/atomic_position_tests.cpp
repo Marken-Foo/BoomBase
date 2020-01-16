@@ -169,18 +169,6 @@ int main(int argc, char* argv[]) {
         }
     }
     std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
-    
-    
-    AtomicPosition apos;
-    apos.fromFen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq");
-    apos.makeMove(buildMove(SQ_A1, SQ_A2));
-    apos.makeMove(buildMove(SQ_H8, SQ_H7));
-    apos.makeMove(buildCastling(SQ_E1, SQ_H1));
-    apos.makeMove(buildMove(SQ_H7, SQ_H6));
-    apos.makeMove(buildMove(SQ_A2, SQ_A3));
-    apos.makeMove(buildCastling(SQ_E8, SQ_A8));
-    std::cout << std::to_string(apos.explosionStack.size()) << "\n";
-    
     return 0;
 }
 

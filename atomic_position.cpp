@@ -157,7 +157,7 @@ void AtomicPosition::unmakeMove(Move mv) {
     const Piece pc {mailbox[toSq]};
     const bool isCaptureOrEp {pc == NO_PIECE};
     PieceType pcty {NO_PCTY};
-    if (!isCapture) {
+    if (!isCaptureOrEp) {
         pcty = getPieceType(pc);
     }
     // Grab undo information off the stack. Assumes it matches the move called.
@@ -201,5 +201,21 @@ void AtomicPosition::unmakeMove(Move mv) {
         addPiece(co, pcty, fromSq);
         removePiece(co, pcty, toSq);
     }
+    return;
+}
+
+void AtomicPosition::reset() {
+    /// Resets AtomicPosition to default.
+    /// Notably, clears the explosion stack.
+    bbByColour.fill(BB_NONE);
+    bbByType.fill(BB_NONE);
+    mailbox.fill(NO_PIECE);
+    sideToMove = WHITE;
+    castlingRights = NO_CASTLE;
+    epRights = NO_SQ;
+    fiftyMoveNum = 0;
+    halfmoveNum = 0;
+    undoStack.clear();
+    explosionStack.clear();
     return;
 }

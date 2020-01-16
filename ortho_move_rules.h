@@ -15,6 +15,11 @@ class OrthoMoveRules : public IMoveRules {
     bool isLegal(Move mv, Position& pos);
     bool isInCheck(Colour co, const Position& pos);
     Movelist generateLegalMoves(Position& pos);
+    
+    protected:
+    Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos);
+    Bitboard attacksTo(Square sq, Colour co, const Position& pos);
+    bool isAttacked(Square sq, Colour co, const Position& pos);
 };
 
 #endif //#ifndef ORTHO_MOVE_RULES_INCLUDED

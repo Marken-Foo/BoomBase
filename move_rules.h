@@ -25,11 +25,7 @@ class IMoveRules {
     IMoveRules& operator=(const IMoveRules&) {return *this;}
     
     // Code common to most chess variants
-    Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos);
-    Bitboard attacksTo(Square sq, Colour co, const Position& pos);
-    bool isAttacked(Square sq, Colour co, const Position& pos);
-    
-    // Piece moves
+    // (Regular) piece moves are independent of variant
     Movelist& addKingMoves(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addKnightMoves(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addBishopMoves(Movelist& mvlist, Colour co, const Position& pos);
@@ -39,9 +35,14 @@ class IMoveRules {
     Movelist& addPawnAttacks(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addPawnMoves(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addEpMoves(Movelist& mvlist, Colour co, const Position& pos);
-
+    
+    // Castling validation needs to know which squares are attacked.
     bool isCastlingValid(CastlingRights cr, const Position& pos);
     Movelist& addCastlingMoves(Movelist& mvlist, Colour co, const Position& pos);
+    // But "attacks" are dependent on the variant.
+    virtual Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos) = 0;
+    virtual Bitboard attacksTo(Square sq, Colour co, const Position& pos) = 0;
+    virtual bool isAttacked(Square sq, Colour co, const Position& pos) = 0;
 };
 
 #endif //#I_MOVE_RULES_INCLUDED

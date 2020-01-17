@@ -109,7 +109,7 @@ class SingleMoveTest {
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
-        std::cout << "Run the perft tests with the command [filename] "
+        std::cout << "Run the position tests with the command [filename] "
                      "[EPD file path] [0 for Make, 1 for Unmake] "
                      "(all arguments required).\n";
         return 0;
@@ -168,12 +168,8 @@ int main(int argc, char* argv[]) {
             std::cout << " " << std::to_string(idFail);
         }
     }
+    std::cout << "\n";
     std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
+    
     return 0;
 }
-
-// Changes needed for atomic chess:
-// > Captures: check exploded pawns/nonpawns are correct.
-// > Captures: check capturer/capturee pawns are destroyed.
-// > Promocaps: same deal
-// > Castlings: check exploded rooks cause castling rights to be lost.

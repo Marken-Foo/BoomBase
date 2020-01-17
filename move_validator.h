@@ -59,23 +59,4 @@ class MoveValidator {
     std::unique_ptr<IMoveRules> rules;
 };
 
-
-
-
-/* 
-// TODO: SPLIT TO ANOTHER FILE
-class AtomicMoveRules : IMoveRules{
-    // The rules of atomic chess.
-    public:
-    bool isLegal(Move mv, Position& pos);
-    bool isInCheck(Colour co, Position& pos);
-    Movelist generateLegalMoves(Position& pos);
-    
-    protected:
-    // in atomic, kings can't capture, so they don't attack anything.
-    Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos);
-    Bitboard attacksTo(Square sq, Colour co, const Position& pos); 
-    bool isAttacked(Square sq, Colour co, const Position& pos);
-}; */
-
 #endif //#ifndef MOVE_VALIDATOR_INCLUDED

@@ -3,6 +3,7 @@
 #include "position.h"
 #include "ortho_position.h"
 #include "atomic_position.h"
+#include "atomic_capture_masks.h"
 
 #include <chrono>
 #include <cstdint>
@@ -13,6 +14,7 @@
 #include <string>
 #include <vector>
 
+
 class SingleTest {
     /// Class representing a single test (position) from a single line in EPD.
     /// 
@@ -20,7 +22,7 @@ class SingleTest {
     std::string strFen;
     std::vector<int> depths;
     std::vector<uint64_t> correctPerfts;
-    MoveValidator arbiter {ORTHO};
+    MoveValidator arbiter;
     
     SingleTest(std::istringstream& issline, Variant var) : arbiter(var) {
         /// Parse a single line passed from EPD.
@@ -48,14 +50,20 @@ class SingleTest {
         // TODO: can separate printing from logic.
         bool isTestCorrect = true;
         std::cout << "Position: " << strFen << "\n";
-        OrthoPosition pos;
+        std::unique_ptr<Position> pos;
+        Variant var = arbiter.getVariant();
+        if (var == ORTHO) {
+            pos.reset(new OrthoPosition);
+        } else if (var == ATOMIC) {
+            pos.reset(new AtomicPosition);
+        }
         int size = depths.size();
         for (int i = 0; i < size ; ++i) {
             if (depths[i] > maxDepth) {
                 continue;
             }
-            pos.fromFen(strFen);
-            uint64_t res = arbiter.perft(depths[i], pos);
+            pos->fromFen(strFen);
+            uint64_t res = arbiter.perft(depths[i], *pos);
             uint64_t check = correctPerfts[i];
             std::cout << "perft at depth " << std::to_string(depths[i]) << ": "
                       << std::to_string(res)
@@ -92,6 +100,7 @@ int main(int argc, char* argv[]) {
     Variant var {argc == 3 ? ORTHO : ATOMIC};
     
     initialiseBbLookup();
+    initialiseAtomicMasks();
     
     auto timeStart = std::chrono::steady_clock::now();
     // Run each test in the testSuite (parsed from EPD).
@@ -125,5 +134,6 @@ int main(int argc, char* argv[]) {
         std::cout << "\n";
     }
     std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
+    
     return 0;
 }

@@ -89,7 +89,6 @@ class Position {
     std::string pretty() const;
     
     
-    
     protected:
     struct StateInfo;
     // --- Class data members ---

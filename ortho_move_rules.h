@@ -2,6 +2,7 @@
 #define ORTHO_MOVE_RULES_INCLUDED
 
 #include "chess_types.h"
+#include "bitboard.h"
 #include "move_rules.h"
 #include "move.h"
 

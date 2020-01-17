@@ -15,7 +15,7 @@
 typedef uint64_t Bitboard;
 
 // Returns a string visualisation of a bitboard; useful to print and debug
-std::string pretty(Bitboard bb);
+const std::string pretty(Bitboard bb);
 
 // === Useful constants ===
 constexpr Bitboard BB_ALL = ~Bitboard{0};

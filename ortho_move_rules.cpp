@@ -85,7 +85,7 @@ Bitboard OrthoMoveRules::attacksTo(Square sq, Colour co, const Position& pos) {
     /// Returns bitboard of units of a given colour that attack a given square.
     /// In chess, most piece types have the property that: if piece PC is on
     /// square SQ_A attacking SQ_B, then from SQ_B it would attack SQ_A.
-    Bitboard bbAttackers {0};
+    Bitboard bbAttackers {BB_NONE};
     bbAttackers = kingAttacks[sq] & pos.getUnitsBb(co, KING);
     bbAttackers |= knightAttacks[sq] & pos.getUnitsBb(co, KNIGHT);
     bbAttackers |= (findDiagAttacks(sq, pos.getUnitsBb()) |
@@ -100,9 +100,8 @@ Bitboard OrthoMoveRules::attacksTo(Square sq, Colour co, const Position& pos) {
     return bbAttackers;
 }
 
-
 bool OrthoMoveRules::isAttacked(Square sq, Colour co, const Position& pos) {
     /// Returns if a square is attacked by pieces of a particular colour.
     /// 
-    return !(attacksTo(sq, co, pos) == BB_NONE);
+    return attacksTo(sq, co, pos) != BB_NONE;
 }

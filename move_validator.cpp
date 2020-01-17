@@ -4,7 +4,6 @@
 #include "move.h"
 #include "ortho_move_rules.h"
 #include "atomic_move_rules.h"
-
 #include "position.h"
 
 #include <cstdint>
@@ -30,6 +29,7 @@ uint64_t MoveValidator::perft(int depth, Position& pos) {
     
     Movelist mvlist = generateLegalMoves(pos);
     int sz = mvlist.size();
+    //std::cout<<std::to_string(sz)<<"\n"; // DEBUGGING
     // Recurse.
     for (int i = 0; i < sz; ++i) {
         pos.makeMove(mvlist[i]);

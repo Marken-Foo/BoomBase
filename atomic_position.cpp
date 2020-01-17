@@ -1,14 +1,17 @@
 #include "atomic_position.h"
+
 #include "atomic_capture_masks.h"
+#include "chess_types.h"
+#include "move.h"
+#include "bitboard.h"
+#include "position.h"
 
 #include <array>
-#include <memory>
 
 void AtomicPosition::makeMove(Move mv) {
     /// Makes a move by changing the state of AtomicPosition.
     /// Assumes the move is valid (not necessarily legal).
     /// Must maintain validity of the Position!
-    
     // Stores explosion information
     std::array<Bitboard, NUM_COLOURS> explosionByColour {};
     std::array<Bitboard, NUM_PIECE_TYPES> explosionByType {};
@@ -79,7 +82,6 @@ void AtomicPosition::makeMove(Move mv) {
             addPiece(co, pcty, toSq);
         }
     }
-    
     // Save irreversible state information in struct, *before* altering them.
     undoStack.emplace_back(pcDest, castlingRights, epRights, fiftyMoveNum);
     explosionStack.emplace_back(pc, explosionByColour, explosionByType);

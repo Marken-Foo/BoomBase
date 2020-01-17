@@ -11,19 +11,43 @@ bool AtomicMoveRules::isInCheck(Colour co, const Position& pos) {
     /// Test if a side (colour) is in check.
     ///
     Bitboard bb {pos.getUnitsBb(co, KING)};
+    // In atomic, one side can have no king (variant game ending) -- popLsb() is
+    // undefined in that case. We need to check for this.
+    if (bb == BB_NONE) {
+        return false;
+    }
     Square sq {popLsb(bb)}; // assumes exactly one king per side.
-    return isAttacked(sq, !co, pos);
+    if (isAttacked(sq, !co, pos)) { // king is attacked.
+        if (kingAttacks[sq] & pos.getUnitsBb(!co, KING)) {
+            return false; // connected kings, no check.
+        } else {
+            return true;
+        }
+    } else {
+        return false;
+    }
 }
 
 
 bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
-    /// Test if making a move would leave one's own royalty in check.
     /// Assumes move is valid.
+    // Logic: I make a move.
+    // If I have no king, illegal. (atomic suicide)
+    // Else, if my opponent has no king, legal. (explosion > check)
+    // Else, if I am in check, illegal. (suicide)
+    // Unmake move.
     Colour co {pos.getSideToMove()};
+    bool isOk {false};
     pos.makeMove(mv);
-    bool isSuicide {isInCheck(co, pos)};
+    if (pos.getUnitsBb(co, KING) == BB_NONE) {
+        isOk = false;
+    } else if (pos.getUnitsBb(!co, KING) == BB_NONE) {
+        isOk = true;
+    } else {
+        isOk = !isInCheck(co, pos);
+    }
     pos.unmakeMove(mv);
-    return !isSuicide;
+    return isOk;
 }
 
 Movelist AtomicMoveRules::generateLegalMoves(Position& pos) {
@@ -38,7 +62,7 @@ Movelist AtomicMoveRules::generateLegalMoves(Position& pos) {
     addPawnMoves(mvlist, co, pos);
     addEpMoves(mvlist, co, pos);
     addCastlingMoves(mvlist, co, pos);
-    // Test for checks.
+    // Test for legality.
     for (auto it = mvlist.begin(); it != mvlist.end();) {
         if (isLegal(*it, pos)) {
             ++it;
@@ -50,10 +74,10 @@ Movelist AtomicMoveRules::generateLegalMoves(Position& pos) {
 }
 
 Bitboard AtomicMoveRules::attacksFrom(Square sq, Colour co, PieceType pcty,
-                                 const Position& pos) {
+                                      const Position& pos) {
     /// Returns bitboard of squares attacked by a given piece type placed on a
     /// given square.
-    Bitboard bbAttacked {0};
+    Bitboard bbAttacked {BB_NONE};
     Bitboard bbAll {pos.getUnitsBb()};
     
     switch (pcty) {
@@ -76,6 +100,7 @@ Bitboard AtomicMoveRules::attacksFrom(Square sq, Colour co, PieceType pcty,
         break;
     case KING:
         // King does not attack in atomic.
+        bbAttacked = BB_NONE;
         break;
     }
     return bbAttacked;
@@ -86,7 +111,7 @@ Bitboard AtomicMoveRules::attacksTo(Square sq, Colour co, const Position& pos) {
     /// In chess, most piece types have the property that: if piece PC is on
     /// square SQ_A attacking SQ_B, then from SQ_B it would attack SQ_A.
     /// In atomic chess, kings cannot capture, so kings do not attack either.
-    Bitboard bbAttackers {0};
+    Bitboard bbAttackers {BB_NONE};
     bbAttackers = knightAttacks[sq] & pos.getUnitsBb(co, KNIGHT);
     bbAttackers |= (findDiagAttacks(sq, pos.getUnitsBb()) |
                     findAntidiagAttacks(sq, pos.getUnitsBb()))
@@ -103,5 +128,5 @@ Bitboard AtomicMoveRules::attacksTo(Square sq, Colour co, const Position& pos) {
 bool AtomicMoveRules::isAttacked(Square sq, Colour co, const Position& pos) {
     /// Returns if a square is attacked by pieces of a particular colour.
     /// 
-    return !(attacksTo(sq, co, pos) != BB_NONE);
+    return attacksTo(sq, co, pos) != BB_NONE;
 }

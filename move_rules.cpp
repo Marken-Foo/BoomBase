@@ -212,7 +212,7 @@ bool IMoveRules::isCastlingValid(CastlingRights cr, const Position& pos) {
     Square sq {NO_SQ};
     while (kingMask) {
         sq = popLsb(kingMask);
-        if (isAttacked(sq, !toColour(cr), pos)) {
+        if (isCheckAttacked(sq, !toColour(cr), pos)) {
             return false;
         }
     }

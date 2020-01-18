@@ -19,6 +19,7 @@ class OrthoMoveRules : public IMoveRules {
     
     protected:
     bool isAttacked(Square sq, Colour co, const Position& pos) override;
+    bool isCheckAttacked(Square sq, Colour co, const Position& pos) override;
     
     Bitboard attacksFrom(Square sq, Colour co, PieceType pcty,
                          const Position& pos);

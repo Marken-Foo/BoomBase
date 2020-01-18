@@ -1,6 +1,7 @@
 #ifndef I_MOVE_RULES_INCLUDED
 #define I_MOVE_RULES_INCLUDED
 
+#include "atomic_capture_masks.h"
 #include "bitboard.h"
 #include "chess_types.h"
 #include "move.h"
@@ -27,6 +28,9 @@ class IMoveRules {
     
     // "Attacks" depend on the variant.
     virtual bool isAttacked(Square sq, Colour co, const Position& pos) = 0;
+    // Whether an enemy king placed on that square would be in check. (In
+    // atomic, this is different from plain attacks!)
+    virtual bool isCheckAttacked(Square sq, Colour co, const Position& pos) = 0;
     
     // Code common to most chess variants
     // (Regular) piece moves are independent of variant

@@ -106,3 +106,9 @@ bool OrthoMoveRules::isAttacked(Square sq, Colour co, const Position& pos) {
     /// 
     return attacksTo(sq, co, pos) != BB_NONE;
 }
+
+bool OrthoMoveRules::isCheckAttacked(Square sq, Colour co, const Position& pos) {
+    /// Returns if an enemy king placed on that square would be in check by co.
+    ///
+    return isAttacked(sq, co, pos);
+}

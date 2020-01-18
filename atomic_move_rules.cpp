@@ -19,7 +19,7 @@ bool AtomicMoveRules::isInCheck(Colour co, const Position& pos) {
     }
     Square sq {popLsb(bb)}; // assumes exactly one king per side.
     if (isAttacked(sq, !co, pos)) { // king is attacked.
-        if (kingAttacks[sq] & pos.getUnitsBb(!co, KING)) {
+        if (atomicMasks[sq] & pos.getUnitsBb(!co, KING)) {
             // connected kings, no check.
             return false;
         } else {
@@ -132,4 +132,12 @@ bool AtomicMoveRules::isAttacked(Square sq, Colour co, const Position& pos) {
     /// Returns if a square is attacked by pieces of a particular colour.
     /// 
     return attacksTo(sq, co, pos) != BB_NONE;
+}
+
+bool AtomicMoveRules::isCheckAttacked(Square sq, Colour co,
+                                      const Position& pos) {
+    /// Returns if an enemy king placed on that square would be in check by co.
+    ///
+    return !(atomicMasks[sq] & pos.getUnitsBb(co, KING))
+           && attacksTo(sq, co, pos);
 }

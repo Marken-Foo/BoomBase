@@ -14,6 +14,9 @@
 #include <string>
 #include <vector>
 
+/// Program to run perft tests from a file. Reads the position, calculates
+/// perft(n), and compares to values from file.
+/// 
 
 class SingleTest {
     /// Class representing a single test (position) from a single line in EPD.
@@ -82,7 +85,8 @@ class SingleTest {
 int main(int argc, char* argv[]) {
     if (argc != 3 && argc != 4) {
         std::cout << "Run the perft tests with the command [filename] "
-            "[EPD file path] [Maximum depth]\n" "Optional argument [] for atomic.\n";
+                     "[EPD file path] [Maximum depth]\n"
+                     "Optional argument [] for atomic.\n";
         return 0;
     }
     
@@ -123,7 +127,8 @@ int main(int argc, char* argv[]) {
     
     // Print testing summary
     int numFails = idFails.size();
-    float passRate = 100 * static_cast<float>(numTests - numFails) / static_cast<float>(numTests);
+    float passRate = 100 * static_cast<float>(numTests - numFails)
+                     / static_cast<float>(numTests);
     std::cout << "\n======= Summary =======\n";
     std::cout << "Passrate = " << std::to_string(passRate) << "%\n";
     if (idFails.size() > 0) {
@@ -133,7 +138,8 @@ int main(int argc, char* argv[]) {
         }
         std::cout << "\n";
     }
-    std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
+    std::cout << std::chrono::duration<double, std::milli>(timeTaken).count()
+              << " ms\n";
     
     return 0;
 }

@@ -1,17 +1,15 @@
 #include "bitboard_lookup.h"
 #include "move_validator.h"
 #include "position.h"
-#include "ortho_position.h"
 #include "atomic_position.h"
 #include "atomic_capture_masks.h"
 
 #include <cstdint>
-#include <cstdlib>
 #include <iostream>
-#include <fstream>
-#include <sstream>
 #include <string>
-#include <vector>
+
+/// Rudimentary console I/O to allow testing of atomic chess perft values.
+///
 
 int main() {
     initialiseBbLookup();
@@ -39,7 +37,8 @@ int main() {
             uint64_t res = arbiter.perft(depth, *pos);
             
             std::cout << pos->pretty();
-            std::cout << "Perft result for depth " << std::to_string(depth) << ": " << std::to_string(res) << "\n";
+            std::cout << "Perft result for depth " << std::to_string(depth)
+                      << ": " << std::to_string(res) << "\n";
         }
     }
     return 0;

@@ -13,6 +13,15 @@
 #include <string>
 #include <vector>
 
+/// Program to read positions from an input file, run perft up to a specified
+/// depth, then write the output to another file.
+/// Useful for generating perft tests (assuming the move generator used here is
+/// reliable.)
+///
+/// Input file: Each line contains only a single FEN position with all fields.
+/// Output file: Each line starts with the FEN position, then perft results
+///              delimited by ";": e.g. "[FEN];D1 12 ;D2 78 ;D3 384" means that
+///              for the position, perft(1) = 12, perft(2) = 78, perft(3) = 384.
 
 class SinglePosition {
     public:
@@ -73,7 +82,7 @@ int main(int argc, char* argv[]) {
     ofs.open(outputFile);
     
     // Setup, initialise everything needed
-    int maxDepth = 6;
+    int maxDepth = 5;
     if (argc == 4) {
         maxDepth = std::atoi(argv[3]);
     }

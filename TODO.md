@@ -2,7 +2,6 @@
 
 ## Change backend to play atomic ##
 
-- Add more atomic perft tests
 - Implement valid move checking
 - Improve legal move checking and generation
 - Implement checkmate and stalemate checking

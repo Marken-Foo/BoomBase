@@ -10,8 +10,9 @@ SRC_PERFT = perft_tests.cpp move_validator.cpp position.cpp ortho_position.cpp a
 SRC_POST = position_tests.cpp position.cpp ortho_position.cpp bitboard_lookup.cpp
 # for atomic_position_tests
 SRC_ATOM_POST = atomic_position_tests.cpp atomic_position.cpp position.cpp atomic_capture_masks.cpp bitboard_lookup.cpp
+
 SRC_ATOM_PERFT_MAKER = atomic_perft_maker.cpp move_validator.cpp position.cpp ortho_position.cpp atomic_position.cpp bitboard_lookup.cpp move_rules.cpp ortho_move_rules.cpp atomic_move_rules.cpp atomic_capture_masks.cpp
-SRC_PERFTER = perfter.cpp move_validator.cpp position.cpp ortho_position.cpp atomic_position.cpp bitboard_lookup.cpp move_rules.cpp ortho_move_rules.cpp atomic_move_rules.cpp atomic_capture_masks.cpp
+SRC_PERFTER = perfter.cpp move_validator.cpp position.cpp atomic_position.cpp bitboard_lookup.cpp move_rules.cpp ortho_move_rules.cpp atomic_move_rules.cpp atomic_capture_masks.cpp
 
 SRCFILES = $(sort $(SRC_PERFT) $(SRC_POST) $(SRC_ATOM_POST) $(SRC_ATOM_PERFT_MAKER) $(SRC_PERFTER))
 OBJFILES = $(SRCFILES:%.cpp=%.o)

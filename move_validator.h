@@ -28,8 +28,8 @@ enum Variant {
 };
 
 class MoveValidator {
-    // A class that contains static methods to validate a move, given a Move and
-    // a Position. Delegates actual checking to specialised classes.
+    /// A class containing methods to validate a move, given a Move and
+    /// a Position. Delegates actual checking to member object.
     public:
     MoveValidator() {
         setVariant(ORTHO);
@@ -53,6 +53,7 @@ class MoveValidator {
     }
     
     uint64_t perft(int depth, Position& pos);
+    
     
     protected:
     Variant currentVariant;

@@ -10,7 +10,8 @@
 #include <memory>
 
 
-Movelist& IMoveRules::addKingMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addKingMoves(Movelist& mvlist, Colour co,
+                                   const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, KING)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Square fromSq {NO_SQ};
@@ -25,7 +26,8 @@ Movelist& IMoveRules::addKingMoves(Movelist& mvlist, Colour co, const Position& 
     return mvlist;
 }
 
-Movelist& IMoveRules::addKnightMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addKnightMoves(Movelist& mvlist, Colour co,
+                                     const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, KNIGHT)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Square fromSq {NO_SQ};
@@ -40,7 +42,8 @@ Movelist& IMoveRules::addKnightMoves(Movelist& mvlist, Colour co, const Position
     return mvlist;
 }
 
-Movelist& IMoveRules::addBishopMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addBishopMoves(Movelist& mvlist, Colour co,
+                                     const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, BISHOP)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Bitboard bbAll {pos.getUnitsBb()};
@@ -58,7 +61,8 @@ Movelist& IMoveRules::addBishopMoves(Movelist& mvlist, Colour co, const Position
     return mvlist;
 }
 
-Movelist& IMoveRules::addRookMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addRookMoves(Movelist& mvlist, Colour co,
+                                   const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, ROOK)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Bitboard bbAll {pos.getUnitsBb()};
@@ -76,7 +80,8 @@ Movelist& IMoveRules::addRookMoves(Movelist& mvlist, Colour co, const Position& 
     return mvlist;
 }
 
-Movelist& IMoveRules::addQueenMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addQueenMoves(Movelist& mvlist, Colour co,
+                                    const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, QUEEN)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Bitboard bbAll {pos.getUnitsBb()};
@@ -96,7 +101,8 @@ Movelist& IMoveRules::addQueenMoves(Movelist& mvlist, Colour co, const Position&
     return mvlist;
 }
 
-Movelist& IMoveRules::addPawnAttacks(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addPawnAttacks(Movelist& mvlist, Colour co,
+                                     const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, PAWN)};
     Bitboard bbEnemy {pos.getUnitsBb(!co)};
     while (bbFrom) {
@@ -109,7 +115,8 @@ Movelist& IMoveRules::addPawnAttacks(Movelist& mvlist, Colour co, const Position
     return mvlist;
 }
 
-Movelist& IMoveRules::addPawnMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addPawnMoves(Movelist& mvlist, Colour co,
+                                   const Position& pos) {
     /// Generates moves, captures, double moves, promotions (and captures).
     /// Does not generate en passant moves.
     Bitboard bbFrom {pos.getUnitsBb(co, PAWN)};
@@ -159,7 +166,8 @@ Movelist& IMoveRules::addPawnMoves(Movelist& mvlist, Colour co, const Position& 
     return mvlist;
 }
 
-Movelist& IMoveRules::addEpMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addEpMoves(Movelist& mvlist, Colour co,
+                                 const Position& pos) {
     Square toSq {pos.getEpSq()}; // only one possible ep square at all times.
     Square fromSq {NO_SQ};
     Bitboard bbEp {bbFromSq(toSq)};
@@ -212,23 +220,28 @@ bool IMoveRules::isCastlingValid(CastlingRights cr, const Position& pos) {
     return true;
 }
 
-Movelist& IMoveRules::addCastlingMoves(Movelist& mvlist, Colour co, const Position& pos) {
+Movelist& IMoveRules::addCastlingMoves(Movelist& mvlist, Colour co,
+                                       const Position& pos) {
     if (co == WHITE) {
         if (isCastlingValid(CASTLE_WSHORT, pos)) {
-            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_WSHORT), pos.getOrigRookSq(CASTLE_WSHORT))};
+            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_WSHORT),
+                                   pos.getOrigRookSq(CASTLE_WSHORT))};
             mvlist.push_back(mv);
         }
         if (isCastlingValid(CASTLE_WLONG, pos)) {
-            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_WLONG), pos.getOrigRookSq(CASTLE_WLONG))};
+            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_WLONG),
+                                   pos.getOrigRookSq(CASTLE_WLONG))};
             mvlist.push_back(mv);
         }
     } else if (co == BLACK) {
         if (isCastlingValid(CASTLE_BSHORT, pos)) {
-            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_BSHORT), pos.getOrigRookSq(CASTLE_BSHORT))};
+            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_BSHORT),
+                                   pos.getOrigRookSq(CASTLE_BSHORT))};
             mvlist.push_back(mv);
         }
         if (isCastlingValid(CASTLE_BLONG, pos)) {
-            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_BLONG), pos.getOrigRookSq(CASTLE_BLONG))};
+            Move mv {buildCastling(pos.getOrigKingSq(CASTLE_BLONG),
+                                   pos.getOrigRookSq(CASTLE_BLONG))};
             mvlist.push_back(mv);
         }
     }

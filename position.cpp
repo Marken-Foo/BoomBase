@@ -1,8 +1,8 @@
 #include "position.h"
 
+#include "bitboard.h"
 #include "chess_types.h"
 #include "move.h"
-#include "bitboard.h"
 
 #include <array>
 #include <cctype>

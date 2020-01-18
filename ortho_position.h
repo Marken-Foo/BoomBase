@@ -1,8 +1,8 @@
 #ifndef ORTHO_POSITION_INCLUDED
 #define ORTHO_POSITION_INCLUDED
 
-#include "position.h"
 #include "move.h"
+#include "position.h"
 
 class OrthoPosition : public Position {
     public:

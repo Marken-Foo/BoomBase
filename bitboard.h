@@ -3,9 +3,9 @@
 
 #include "chess_types.h"
 
+#include <array>
 #include <cstdint>
 #include <string>
-#include <array>
 
 // === bitboard.h ===
 // Essentially lots of global variables and methods involving bitboards.
@@ -13,9 +13,6 @@
 // integer (uint64_t) is used here, corresponding nicely to an 8x8 chessboard.
 
 typedef uint64_t Bitboard;
-
-// Returns a string visualisation of a bitboard; useful to print and debug
-const std::string pretty(Bitboard bb);
 
 // === Useful constants ===
 constexpr Bitboard BB_ALL = ~Bitboard{0};
@@ -73,13 +70,26 @@ inline Bitboard operator^(Bitboard bb, Square sq) {return bb ^ bbFromSq(sq);}
 inline Bitboard operator&(Square sq, Bitboard bb) {return bb & bbFromSq(sq);}
 inline Bitboard operator|(Square sq, Bitboard bb) {return bb | bbFromSq(sq);}
 inline Bitboard operator^(Square sq, Bitboard bb) {return bb ^ bbFromSq(sq);}
-inline Bitboard& operator&=(Bitboard& bb, Square sq) {return bb &= bbFromSq(sq);}
-inline Bitboard& operator|=(Bitboard& bb, Square sq) {return bb |= bbFromSq(sq);}
-inline Bitboard& operator^=(Bitboard& bb, Square sq) {return bb ^= bbFromSq(sq);}
 
-inline Bitboard operator&(Square sq1, Square sq2) {return bbFromSq(sq1) & bbFromSq(sq2);}
-inline Bitboard operator|(Square sq1, Square sq2) {return bbFromSq(sq1) | bbFromSq(sq2);}
-inline Bitboard operator^(Square sq1, Square sq2) {return bbFromSq(sq1) ^ bbFromSq(sq2);}
+inline Bitboard& operator&=(Bitboard& bb, Square sq) {
+    return bb &= bbFromSq(sq);
+}
+inline Bitboard& operator|=(Bitboard& bb, Square sq) {
+    return bb |= bbFromSq(sq);
+}
+inline Bitboard& operator^=(Bitboard& bb, Square sq) {
+    return bb ^= bbFromSq(sq);
+}
+
+inline Bitboard operator&(Square sq1, Square sq2) {
+    return bbFromSq(sq1) & bbFromSq(sq2);
+}
+inline Bitboard operator|(Square sq1, Square sq2) {
+    return bbFromSq(sq1) | bbFromSq(sq2);
+}
+inline Bitboard operator^(Square sq1, Square sq2) {
+    return bbFromSq(sq1) ^ bbFromSq(sq2);
+}
 
 
 // === Bitboard shifting ===
@@ -91,5 +101,19 @@ inline Bitboard shiftNE(Bitboard bb) {return (bb << 9) & ~BB_A;}
 inline Bitboard shiftNW(Bitboard bb) {return (bb << 7) & ~BB_H;}
 inline Bitboard shiftSE(Bitboard bb) {return (bb >> 7) & ~BB_A;}
 inline Bitboard shiftSW(Bitboard bb) {return (bb >> 9) & ~BB_H;}
+
+// Returns a string visualisation of a bitboard; useful to print and debug
+inline const std::string pretty(Bitboard bb) {
+    std::string outStr {"+--------+\n"};
+    for (int y = 7; y >= 0; y--) {
+        outStr.push_back('|');
+        for (int x = 0; x < 8; ++x) {
+            outStr.push_back((bb & square(x, y)) ? 'X' : '.');
+        }
+        outStr += "|\n";
+    }
+    outStr += "+--------+\n";
+    return outStr;
+}
 
 #endif //#ifndef BITBOARD_INCLUDED

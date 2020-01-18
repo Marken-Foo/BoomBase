@@ -3,8 +3,8 @@
 
 #include "chess_types.h"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 // === move.h ===
 // Contains the internal representation of a chess move and associated methods.
@@ -60,7 +60,8 @@ inline Move buildPromotion(Square fromSq, Square toSq, PieceType pcty) {
 }
 
 inline Move buildCastling(Square fromSq, Square toSq) {
-    // For move encoding, fromSq/toSq are the king's/rook's initial squares.
+    /// For move encoding, fromSq/toSq are the king's/rook's initial squares.
+    ///
     Move mv {0};
     mv |= fromSq;
     mv |= (toSq << 6);
@@ -76,9 +77,9 @@ inline Move buildEp(Square fromSq, Square toSq) {
     return mv;
 }
 
-
-// Conversion to string for debugging
 inline std::string toString(Move mv) {
+    /// Conversion to string, useful for debugging
+    ///
     if (mv==0) {return "-----  ";}
     std::string outStr;
     outStr.push_back('a' + getFileIdx(getFromSq(mv)));

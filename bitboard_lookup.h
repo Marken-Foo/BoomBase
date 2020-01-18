@@ -1,8 +1,8 @@
 #ifndef BITBOARD_LOOKUP_INCLUDED
 #define BITBOARD_LOOKUP_INCLUDED
 
-#include "chess_types.h"
 #include "bitboard.h"
+#include "chess_types.h"
 
 #include <array>
 
@@ -14,8 +14,6 @@
 // Initialise tables. Must be called at least once before doing any lookup.
 void initialiseBbLookup();
 
-// Getters: Return a Bitboard for slider attacks, given a Square sq and an
-// occupancy Bitboard bbPos.
 Bitboard findRankAttacks(Square sq, Bitboard bbPos);
 Bitboard findDiagAttacks(Square sq, Bitboard bbPos);
 Bitboard findAntidiagAttacks(Square sq, Bitboard bbPos);
@@ -23,12 +21,12 @@ Bitboard findFileAttacks(Square sq, Bitboard bbPos);
 
 
 // === Lookup tables ===
-// Declared here, defined in the cpp. Must be generated before doing any lookup.
+// **Must be generated before doing any lookup!**
 
 // Indexed by square on the chessboard.
 extern std::array<Bitboard, NUM_SQUARES> knightAttacks;
 extern std::array<Bitboard, NUM_SQUARES> kingAttacks;
-// Pawn attacks depend on colour, so indexed by square then colour.
+// Pawn attacks depend on colour.
 extern std::array<std::array<Bitboard, NUM_SQUARES>, NUM_COLOURS> pawnAttacks;
 
 // Indexed by square on the chessboard. Contains the Bitboard of the

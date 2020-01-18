@@ -1,14 +1,15 @@
 #ifndef ATOMIC_MOVE_RULES_INCLUDED
 #define ATOMIC_MOVE_RULES_INCLUDED
 
-#include "chess_types.h"
 #include "bitboard.h"
-#include "move_rules.h"
+#include "chess_types.h"
 #include "move.h"
+#include "move_rules.h"
 
 class Position;
 
 class AtomicMoveRules : public IMoveRules {
+    // Knowledge of the rules of atomic chess.
     public:
     AtomicMoveRules() = default;
     

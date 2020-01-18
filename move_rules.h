@@ -1,8 +1,8 @@
 #ifndef I_MOVE_RULES_INCLUDED
 #define I_MOVE_RULES_INCLUDED
 
-#include "chess_types.h"
 #include "bitboard.h"
+#include "chess_types.h"
 #include "move.h"
 
 #include <cstdint>

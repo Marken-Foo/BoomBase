@@ -1,14 +1,15 @@
 #ifndef ATOMIC_POSITION_INCLUDED
 #define ATOMIC_POSITION_INCLUDED
 
-#include "position.h"
 #include "chess_types.h"
 #include "move.h"
+#include "position.h"
 
 #include <array>
 #include <deque>
 
-
+/// Position class for atomic chess.
+///
 class AtomicPosition : public Position {
     public:
     void makeMove(Move mv) override;

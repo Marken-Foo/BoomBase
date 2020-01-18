@@ -1,9 +1,9 @@
 #include "ortho_move_rules.h"
 
-#include "chess_types.h"
-#include "move.h"
 #include "bitboard.h"
 #include "bitboard_lookup.h"
+#include "chess_types.h"
+#include "move.h"
 #include "position.h"
 
 
@@ -65,14 +65,15 @@ Bitboard OrthoMoveRules::attacksFrom(Square sq, Colour co, PieceType pcty,
         bbAttacked = knightAttacks[sq];
         break;
     case BISHOP:
-        bbAttacked = findDiagAttacks(sq, bbAll) | findAntidiagAttacks(sq, bbAll);
+        bbAttacked = findDiagAttacks(sq, bbAll)
+                     | findAntidiagAttacks(sq, bbAll);
         break;
     case ROOK:
         bbAttacked = findRankAttacks(sq, bbAll) | findFileAttacks(sq, bbAll);
         break;
     case QUEEN:
         bbAttacked = findRankAttacks(sq, bbAll) | findFileAttacks(sq, bbAll) |
-                     findDiagAttacks(sq, bbAll) | findAntidiagAttacks(sq, bbAll);
+                    findDiagAttacks(sq, bbAll) | findAntidiagAttacks(sq, bbAll);
         break;
     case KING:
         bbAttacked = kingAttacks[sq];

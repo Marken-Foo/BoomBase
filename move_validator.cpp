@@ -1,9 +1,9 @@
 #include "move_validator.h"
 
+#include "atomic_move_rules.h"
 #include "chess_types.h"
 #include "move.h"
 #include "ortho_move_rules.h"
-#include "atomic_move_rules.h"
 #include "position.h"
 
 #include <cstdint>

@@ -1,13 +1,13 @@
 #ifndef POSITION_INCLUDED
 #define POSITION_INCLUDED
 
-#include "chess_types.h"
 #include "bitboard.h"
+#include "chess_types.h"
 #include "move.h"
 
-#include <string>
 #include <array>
 #include <deque>
+#include <string>
 
 // === position.h ===
 // An abstract class defining the internal representation of a "physical" chess

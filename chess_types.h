@@ -2,8 +2,8 @@
 #define CHESS_TYPES_INCLUDED
 
 #include <string>
-#include <array>
 #include <stdexcept> //helps debugging
+#include <array>
 
 // === chess_types.h ===
 // Essentially a lot of global constant variables and functions.

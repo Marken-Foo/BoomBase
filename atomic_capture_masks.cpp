@@ -1,6 +1,7 @@
 #include "atomic_capture_masks.h"
-#include "chess_types.h"
+
 #include "bitboard.h"
+#include "chess_types.h"
 
 #include <array>
 

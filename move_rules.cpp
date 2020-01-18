@@ -1,9 +1,9 @@
 #include "move_rules.h"
 
-#include "chess_types.h"
-#include "move.h"
 #include "bitboard.h"
 #include "bitboard_lookup.h"
+#include "chess_types.h"
+#include "move.h"
 #include "position.h"
 
 #include <cstdint>

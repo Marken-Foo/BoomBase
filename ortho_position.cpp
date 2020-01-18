@@ -1,8 +1,8 @@
 #include "ortho_position.h"
 
+#include "bitboard.h"
 #include "chess_types.h"
 #include "move.h"
-#include "bitboard.h"
 #include "position.h"
 
 void OrthoPosition::makeMove(Move mv) {

@@ -1,8 +1,8 @@
 #include "bitboard_lookup.h"
 #include "chess_types.h"
 #include "move.h"
-#include "position.h"
 #include "ortho_position.h"
+#include "position.h"
 
 #include <chrono>
 #include <cstdlib>

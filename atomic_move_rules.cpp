@@ -1,15 +1,16 @@
 #include "atomic_move_rules.h"
 
-#include "chess_types.h"
-#include "move.h"
 #include "bitboard.h"
 #include "bitboard_lookup.h"
+#include "chess_types.h"
+#include "move.h"
 #include "position.h"
 
 
 bool AtomicMoveRules::isInCheck(Colour co, const Position& pos) {
     /// Test if a side (colour) is in check.
-    ///
+    /// A king is in check if it is attacked by any enemy piece except the king.
+    /// Additionally, it is *never* check if the two kings are adjacent.
     Bitboard bb {pos.getUnitsBb(co, KING)};
     // In atomic, one side can have no king (variant game ending) -- popLsb() is
     // undefined in that case. We need to check for this.
@@ -19,7 +20,8 @@ bool AtomicMoveRules::isInCheck(Colour co, const Position& pos) {
     Square sq {popLsb(bb)}; // assumes exactly one king per side.
     if (isAttacked(sq, !co, pos)) { // king is attacked.
         if (kingAttacks[sq] & pos.getUnitsBb(!co, KING)) {
-            return false; // connected kings, no check.
+            // connected kings, no check.
+            return false;
         } else {
             return true;
         }
@@ -30,20 +32,20 @@ bool AtomicMoveRules::isInCheck(Colour co, const Position& pos) {
 
 
 bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
-    /// Assumes move is valid.
-    // Logic: I make a move.
-    // If I have no king, illegal. (atomic suicide)
-    // Else, if my opponent has no king, legal. (explosion > check)
-    // Else, if I am in check, illegal. (suicide)
-    // Unmake move.
+    /// Tests valid moves for illegality. (Assumes move is valid.)
+    /// Illegal moves in atomic include exploding one's own king, and leaving
+    /// one's king in check while the opponent's is still on the board.
     Colour co {pos.getSideToMove()};
     bool isOk {false};
     pos.makeMove(mv);
     if (pos.getUnitsBb(co, KING) == BB_NONE) {
+        // exploded own king
         isOk = false;
     } else if (pos.getUnitsBb(!co, KING) == BB_NONE) {
+        // exploded enemy king
         isOk = true;
     } else {
+        // left own king in check?
         isOk = !isInCheck(co, pos);
     }
     pos.unmakeMove(mv);
@@ -89,14 +91,15 @@ Bitboard AtomicMoveRules::attacksFrom(Square sq, Colour co, PieceType pcty,
         bbAttacked = knightAttacks[sq];
         break;
     case BISHOP:
-        bbAttacked = findDiagAttacks(sq, bbAll) | findAntidiagAttacks(sq, bbAll);
+        bbAttacked = findDiagAttacks(sq, bbAll)
+                     | findAntidiagAttacks(sq, bbAll);
         break;
     case ROOK:
         bbAttacked = findRankAttacks(sq, bbAll) | findFileAttacks(sq, bbAll);
         break;
     case QUEEN:
         bbAttacked = findRankAttacks(sq, bbAll) | findFileAttacks(sq, bbAll) |
-                     findDiagAttacks(sq, bbAll) | findAntidiagAttacks(sq, bbAll);
+                    findDiagAttacks(sq, bbAll) | findAntidiagAttacks(sq, bbAll);
         break;
     case KING:
         // King does not attack in atomic.
@@ -119,7 +122,7 @@ Bitboard AtomicMoveRules::attacksTo(Square sq, Colour co, const Position& pos) {
     bbAttackers |= (findRankAttacks(sq, pos.getUnitsBb()) |
                     findFileAttacks(sq, pos.getUnitsBb()))
                    & (pos.getUnitsBb(co, ROOK) | pos.getUnitsBb(co, QUEEN));
-    // But for pawns, a square SQ_A is attacked by a [Colour] pawn on SQ_B,
+    // For pawns, a square SQ_A is attacked by a [Colour] pawn on SQ_B,
     // if a [!Colour] pawn on SQ_A would attack SQ_B.
     bbAttackers |= pawnAttacks[!co][sq] & pos.getUnitsBb(co, PAWN);
     return bbAttackers;

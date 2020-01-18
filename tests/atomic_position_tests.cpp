@@ -1,8 +1,8 @@
+#include "atomic_capture_masks.h" 
+#include "atomic_position.h"
 #include "bitboard_lookup.h"
 #include "chess_types.h"
 #include "move.h"
-#include "atomic_capture_masks.h" 
-#include "atomic_position.h"
 
 #include <chrono>
 #include <cstdlib>
@@ -159,7 +159,8 @@ int main(int argc, char* argv[]) {
     
     // Print testing summary
     int numFails = idFails.size();
-    float passRate = 100 * static_cast<float>(numTests - numFails) / static_cast<float>(numTests);
+    float passRate = 100 * static_cast<float>(numTests - numFails)
+                     / static_cast<float>(numTests);
     std::cout << "\n======= Summary =======\n";
     std::cout << "Passrate = " << std::to_string(passRate) << "%\n";
     if (idFails.size() > 0) {
@@ -169,7 +170,8 @@ int main(int argc, char* argv[]) {
         }
     }
     std::cout << "\n";
-    std::cout << std::chrono::duration <double, std::milli> (timeTaken).count() << " ms\n";
+    std::cout << std::chrono::duration<double, std::milli>(timeTaken).count()
+              << " ms\n";
     
     return 0;
 }

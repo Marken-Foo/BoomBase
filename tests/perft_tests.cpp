@@ -1,9 +1,9 @@
+#include "atomic_capture_masks.h"
+#include "atomic_position.h"
 #include "bitboard_lookup.h"
 #include "move_validator.h"
-#include "position.h"
 #include "ortho_position.h"
-#include "atomic_position.h"
-#include "atomic_capture_masks.h"
+#include "position.h"
 
 #include <chrono>
 #include <cstdint>

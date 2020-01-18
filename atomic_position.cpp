@@ -1,9 +1,9 @@
 #include "atomic_position.h"
 
 #include "atomic_capture_masks.h"
+#include "bitboard.h"
 #include "chess_types.h"
 #include "move.h"
-#include "bitboard.h"
 #include "position.h"
 
 #include <array>
@@ -12,6 +12,7 @@ void AtomicPosition::makeMove(Move mv) {
     /// Makes a move by changing the state of AtomicPosition.
     /// Assumes the move is valid (not necessarily legal).
     /// Must maintain validity of the Position!
+    
     // Stores explosion information
     std::array<Bitboard, NUM_COLOURS> explosionByColour {};
     std::array<Bitboard, NUM_PIECE_TYPES> explosionByType {};
@@ -40,7 +41,7 @@ void AtomicPosition::makeMove(Move mv) {
     if (isCapture || isEp) {
         // Could be capture, promotion capture, or en passant.
         // Record, then remove all units exploded.
-        // (Manipulate bitboards directly; mailbox is handled shortly after.)
+        // (Manipulate bitboards directly; mailbox is handled easily later.)
         for (int i = 1; i < NUM_PIECE_TYPES; ++i) {
             // Adjacent pawns are *not* exploded (note index of for loop!).
             explosionByType[i] ^= bbByType[i] & mask;
@@ -52,7 +53,7 @@ void AtomicPosition::makeMove(Move mv) {
             bbByColour[j] &= ~explosionByColour[j];
         }
         // But directly captured or en passant'd pawn, *is* exploded.
-        // For en passant, pcDest will be NO_PIECE!
+        // (For en passant, pcDest will be NO_PIECE!)
         if (getPieceType(pcDest) == PAWN && pcDest != NO_PIECE) {
             explosionByColour[!co] ^= toSq;
             explosionByType[PAWN] ^= toSq;
@@ -67,7 +68,8 @@ void AtomicPosition::makeMove(Move mv) {
             bbByType[PAWN] ^= sqEpCap;
         }
         // (Now it is convenient to update the mailbox.)
-        Bitboard bbExplosion {explosionByColour[WHITE] | explosionByColour[BLACK]};
+        Bitboard bbExplosion {explosionByColour[WHITE]
+                              | explosionByColour[BLACK]};
         while (bbExplosion) {
             Square sq = popLsb(bbExplosion);
             mailbox[sq] = NO_PIECE;
@@ -186,7 +188,8 @@ void AtomicPosition::unmakeMove(Move mv) {
         
         for (int xco = 0; xco < NUM_COLOURS; ++xco) {
             for (int xpcty = 0; xpcty < NUM_PIECE_TYPES; ++xpcty) {
-                Bitboard bbPiece {explosionByColour[xco] & explosionByType[xpcty]};
+                Bitboard bbPiece {explosionByColour[xco]
+                                  & explosionByType[xpcty]};
                 while (bbPiece) {
                     Square sq {popLsb(bbPiece)};
                     addPiece(xco, xpcty, sq);
@@ -207,8 +210,7 @@ void AtomicPosition::unmakeMove(Move mv) {
 }
 
 void AtomicPosition::reset() {
-    /// Resets AtomicPosition to default.
-    /// Notably, clears the explosion stack.
+    /// Resets AtomicPosition to default. Notably, clears the explosion stack.
     bbByColour.fill(BB_NONE);
     bbByType.fill(BB_NONE);
     mailbox.fill(NO_PIECE);

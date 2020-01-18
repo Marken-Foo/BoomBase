@@ -1,15 +1,15 @@
 #ifndef ORTHO_MOVE_RULES_INCLUDED
 #define ORTHO_MOVE_RULES_INCLUDED
 
-#include "chess_types.h"
 #include "bitboard.h"
-#include "move_rules.h"
+#include "chess_types.h"
 #include "move.h"
+#include "move_rules.h"
 
 class Position;
 
 class OrthoMoveRules : public IMoveRules { 
-    // The rules of regular chess, or orthochess.
+    // Knowledge of the rules of regular chess, or orthochess.
     public:
     OrthoMoveRules() = default;
     
@@ -20,7 +20,8 @@ class OrthoMoveRules : public IMoveRules {
     protected:
     bool isAttacked(Square sq, Colour co, const Position& pos) override;
     
-    Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos);
+    Bitboard attacksFrom(Square sq, Colour co, PieceType pcty,
+                         const Position& pos);
     Bitboard attacksTo(Square sq, Colour co, const Position& pos);
 };
 

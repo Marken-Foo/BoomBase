@@ -40,14 +40,15 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     // To optimise by not checking every move with make/unmake, but by screening
     // moves that are possibly illegal and only checking those.
     // A move can be illegal only if it is a king move, capture/ep, or move of a
-    // pinned piece.
+    // pinned piece while kings are not connected.
     // (In atomic, captures can explode multiple pieces on a line to open up a
     // checking ray.)
-    // So conversely, a move is never illegal if it is a non-capture move of a
-    // non-king, non-pinned piece.
+    // So if kings are connected, only king moves/captures can be illegal.
+    // If kings are not connected, we need to check for pins too.
     
     Colour co {pos.getSideToMove()};
     bool isOk {false};
+    
     pos.makeMove(mv);
     if (pos.getUnitsBb(co, KING) == BB_NONE) {
         // exploded own king

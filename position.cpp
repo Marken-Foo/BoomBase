@@ -151,8 +151,6 @@ std::string Position::pretty() const {
     return strOut;
 }
 
-// === Helper methods (private) ===
-
 void Position::addPiece(Piece pc, Square sq) {
     // Does not maintain position validity. Do not call with NO_PIECE.
     Colour co {getPieceColour(pc)};

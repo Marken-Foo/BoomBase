@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <iostream>
 #include <string>
+#include <utility>
+#include <vector>
 
 /// Rudimentary console I/O to allow testing of atomic chess perft values.
 ///
@@ -34,11 +36,15 @@ int main() {
             if (depth > 15) {break;}
             
             std::cout << "Calculating...\r";
-            uint64_t res = arbiter.perft(depth, *pos);
+            std::vector<std::pair<Move, uint64_t> > res = arbiter.perftSplit(depth, *pos);
             
             std::cout << pos->pretty();
             std::cout << "Perft result for depth " << std::to_string(depth)
-                      << ": " << std::to_string(res) << "\n";
+                      << ":\n";
+            for (std::pair<Move, uint64_t> split : res) {
+                std::cout << toString(split.first) << ": "
+                          << std::to_string(split.second) << "\n";
+            }
         }
     }
     return 0;

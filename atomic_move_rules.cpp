@@ -51,8 +51,8 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     Square fromSq {getFromSq(mv)};
     Square toSq {getToSq(mv)};
     
-    // Check if position is in an end state already. (SHOULD MOVE TO POSITION.CPP)
-    if (pos.getUnitsBb(co, KING) == BB_NONE || pos.getUnitsBb(!co, KING) == BB_NONE) {
+    // No moves are legal from a terminated game.
+    if (pos.isVariantEnd()) {
         return false;
     }
     

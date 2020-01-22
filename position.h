@@ -72,6 +72,9 @@ class Position {
     Square getEpSq() const {
         return epRights;
     }
+    bool isVariantEnd() const {
+        return variantEnd;
+    }
     
     // Exposed for convenience for legal move checking.
     // Intentionally restricted to king to prevent temptation to overuse method.
@@ -116,7 +119,8 @@ class Position {
     Square epRights {NO_SQ};
     int fiftyMoveNum {0};
     int halfmoveNum {0};
-    
+    // for variant use
+    bool variantEnd {false};
     // Stack of unrestorable information for unmaking moves.
     std::deque<StateInfo> undoStack {};
     

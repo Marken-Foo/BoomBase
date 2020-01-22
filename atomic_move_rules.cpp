@@ -48,6 +48,35 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     
     Colour co {pos.getSideToMove()};
     bool isOk {false};
+    Square fromSq {getFromSq(mv)};
+    Square toSq {getToSq(mv)};
+    
+    // Check if position is in an end state already. (SHOULD MOVE TO POSITION.CPP)
+    if (pos.getUnitsBb(co, KING) == BB_NONE || pos.getUnitsBb(!co, KING) == BB_NONE) {
+        return false;
+    }
+    
+    // Always check captures. Illegal if explodes own king, else legal if
+    // explodes enemy king.
+    if (pos.getMailbox(toSq) != NO_PIECE) {
+        if (pos.getUnitsBb(co, KING) & atomicMasks[toSq]) {
+            return false;
+        } else if (pos.getUnitsBb(!co, KING) & atomicMasks[toSq]) {
+            return true;
+        }
+    }
+    
+    // Always check king moves. Illegal if stepping into check or capturing.
+    if (getPieceType(pos.getMailbox(fromSq)) == KING && !isCastling(mv)) {
+        if (pos.getMailbox(toSq) != NO_PIECE) {
+            return false;
+        } else {
+            pos.ghostKing(co, fromSq);
+            isOk = !isCheckAttacked(toSq, !co, pos);
+            pos.unghostKing(co, fromSq);
+            return isOk;
+        }
+    }
     
     pos.makeMove(mv);
     if (pos.getUnitsBb(co, KING) == BB_NONE) {

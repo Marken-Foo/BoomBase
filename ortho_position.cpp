@@ -100,6 +100,10 @@ void OrthoPosition::makeMove(Move mv) {
         ++fiftyMoveNum;
     }
     ++halfmoveNum;
+    
+    if (pcty == KING) {
+        kingSq[co] = toSq;
+    }
     return;
 }
 
@@ -150,6 +154,10 @@ void OrthoPosition::unmakeMove(Move mv) {
         Square sqEpCap {(co == WHITE) ? shiftS(toSq) : shiftN(toSq)};
         addPiece(!co, PAWN, sqEpCap);
     }
+    
+    if (pcty == KING) {
+        kingSq[co] = fromSq;
+    }
     return;
 }
 
@@ -165,5 +173,7 @@ void OrthoPosition::reset() {
     fiftyMoveNum = 0;
     halfmoveNum = 0;
     undoStack.clear();
+    
+    kingSq.fill(NO_SQ);
     return;
 }

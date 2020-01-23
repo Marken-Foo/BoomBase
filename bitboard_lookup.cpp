@@ -226,13 +226,17 @@ void initialiseLineBetween() {
         for (int jsq = 0; jsq <= isq; ++jsq) {
             Square sq2 = square(jsq);
             if (sq2 & bbOrtho) {
-                Bitboard bb = {findRookAttacks(sq2, bbFromSq(sq2))};
-                lineBetween[isq][jsq] = bbOrtho & bb;
-                lineBetween[jsq][isq] = bbOrtho & bb;
+                Bitboard bb = bb1 | sq2;
+                Bitboard bbBetween = {findRookAttacks(sq1, bb) &
+                                      findRookAttacks(sq2, bb)};
+                lineBetween[isq][jsq] = bbBetween;
+                lineBetween[jsq][isq] = bbBetween;
             } else if (sq2 & bbDiag) {
-                Bitboard bb = {findBishopAttacks(sq2, bbFromSq(sq2))};
-                lineBetween[isq][jsq] = bbDiag & bb;
-                lineBetween[jsq][isq] = bbDiag & bb;
+                Bitboard bb = bb1 | sq2;
+                Bitboard bbBetween = {findBishopAttacks(sq1, bb) &
+                                      findBishopAttacks(sq2, bb)};
+                lineBetween[isq][jsq] = bbBetween;
+                lineBetween[jsq][isq] = bbBetween;
             } else {
                 lineBetween[isq][jsq] = BB_NONE;
                 lineBetween[jsq][isq] = BB_NONE;

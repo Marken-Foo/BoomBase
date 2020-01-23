@@ -87,6 +87,10 @@ Position& Position::fromFen(const std::string& fenStr) {
                   ? 2*fullmoveNum - 2
                   : 2*fullmoveNum - 1;
     
+    // fill in auxiliary fields that can be calculated
+    kingSq[WHITE] = lsb(getUnitsBb(WHITE, KING));
+    kingSq[BLACK] = lsb(getUnitsBb(BLACK, KING));
+    
     return *this;
 }
 
@@ -227,6 +231,8 @@ void Position::makeCastlingMove(Move mv) {
     sideToMove = !sideToMove;
     ++fiftyMoveNum;
     ++halfmoveNum;
+    
+    kingSq[co] = sqKTo;
     return;
 }
 
@@ -277,5 +283,7 @@ void Position::unmakeCastlingMove(Move mv) {
     mailbox[sqRFrom] = piece(co, ROOK);
     mailbox[sqKTo] = NO_PIECE;
     mailbox[sqRTo] = NO_PIECE;
+    
+    kingSq[co] = sqKFrom;
     return;
 }

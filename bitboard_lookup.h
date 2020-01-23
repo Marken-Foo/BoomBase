@@ -19,6 +19,8 @@ Bitboard findDiagAttacks(Square sq, Bitboard bbPos);
 Bitboard findAntidiagAttacks(Square sq, Bitboard bbPos);
 Bitboard findFileAttacks(Square sq, Bitboard bbPos);
 
+Bitboard findRookAttacks(Square sq, Bitboard bbPos);
+Bitboard findBishopAttacks(Square sq, Bitboard bbPos);
 
 // === Lookup tables ===
 // **Must be generated before doing any lookup!**
@@ -33,5 +35,9 @@ extern std::array<std::array<Bitboard, NUM_SQUARES>, NUM_COLOURS> pawnAttacks;
 // corresponding (anti)diagonal passing through that square.
 extern std::array<Bitboard, NUM_SQUARES> diagMasks;
 extern std::array<Bitboard, NUM_SQUARES> antidiagMasks;
+
+// Lookup for bitboard of squares between (exclusive) two endpoint squares.
+// Bitboard is zero if squares are not along the same rank, file, or diagonal.
+extern std::array<std::array<Bitboard, NUM_SQUARES>, NUM_SQUARES> lineBetween;
 
 #endif //#ifndef BITBOARD_LOOKUP_INCLUDED

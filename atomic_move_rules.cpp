@@ -74,17 +74,17 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     if (pos.isVariantEnd()) {
         return false;
     }
-    
     // Always check captures. Illegal if explodes own king, else legal if
-    // explodes enemy king.
+    // explodes enemy king, else check if it unleashes a check ray.
     if (pos.getMailbox(toSq) != NO_PIECE) {
         if (pos.getUnitsBb(co, KING) & atomicMasks[toSq]) {
             return false;
         } else if (pos.getUnitsBb(!co, KING) & atomicMasks[toSq]) {
             return true;
+        } else {
+            //TODO: check if check ray is unleashed
         }
     }
-    
     // Always check king moves. (Except castling!)
     // Illegal if stepping into check or capturing.
     if (getPieceType(pos.getMailbox(fromSq)) == KING && !isCastling(mv)) {
@@ -97,7 +97,6 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
             return isOk;
         }
     }
-    
     // If kings are connected, then all non-capture non-king moves are fine.
     // Castling is a king move!
     Bitboard bbKing = pos.getUnitsBb(co, KING);
@@ -106,7 +105,6 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
         && !isCastling(mv) && !isEp(mv)) {
         return true;
     }
-    
     // If kings are not connected, then check if piece is pinned.
     // Also need to check if captures cause opening of check ray!
     
@@ -153,15 +151,13 @@ Bitboard AtomicMoveRules::attacksFrom(Square sq, Colour co, PieceType pcty,
         bbAttacked = knightAttacks[sq];
         break;
     case BISHOP:
-        bbAttacked = findDiagAttacks(sq, bbAll)
-                     | findAntidiagAttacks(sq, bbAll);
+        bbAttacked = findBishopAttacks(sq, bbAll);
         break;
     case ROOK:
-        bbAttacked = findRankAttacks(sq, bbAll) | findFileAttacks(sq, bbAll);
+        bbAttacked = findRookAttacks(sq, bbAll);
         break;
     case QUEEN:
-        bbAttacked = findRankAttacks(sq, bbAll) | findFileAttacks(sq, bbAll) |
-                    findDiagAttacks(sq, bbAll) | findAntidiagAttacks(sq, bbAll);
+        bbAttacked = findRookAttacks(sq, bbAll) | findBishopAttacks(sq, bbAll);
         break;
     case KING:
         // King does not attack in atomic.
@@ -178,11 +174,9 @@ Bitboard AtomicMoveRules::attacksTo(Square sq, Colour co, const Position& pos) {
     /// In atomic chess, kings cannot capture, so kings do not attack either.
     Bitboard bbAttackers {BB_NONE};
     bbAttackers = knightAttacks[sq] & pos.getUnitsBb(co, KNIGHT);
-    bbAttackers |= (findDiagAttacks(sq, pos.getUnitsBb()) |
-                    findAntidiagAttacks(sq, pos.getUnitsBb()))
+    bbAttackers |= findBishopAttacks(sq, pos.getUnitsBb())
                    & (pos.getUnitsBb(co, BISHOP) | pos.getUnitsBb(co, QUEEN));
-    bbAttackers |= (findRankAttacks(sq, pos.getUnitsBb()) |
-                    findFileAttacks(sq, pos.getUnitsBb()))
+    bbAttackers |= findRookAttacks(sq, pos.getUnitsBb())
                    & (pos.getUnitsBb(co, ROOK) | pos.getUnitsBb(co, QUEEN));
     // For pawns, a square SQ_A is attacked by a [Colour] pawn on SQ_B,
     // if a [!Colour] pawn on SQ_A would attack SQ_B.

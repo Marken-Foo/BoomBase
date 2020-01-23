@@ -51,9 +51,7 @@ Movelist& IMoveRules::addBishopMoves(Movelist& mvlist, Colour co,
     Bitboard bbTo {BB_NONE};
     while (bbFrom) {
         fromSq = popLsb(bbFrom);
-        bbTo = (findDiagAttacks(fromSq, bbAll) |
-                findAntidiagAttacks(fromSq, bbAll))
-               & ~bbFriendly;
+        bbTo = findBishopAttacks(fromSq, bbAll) & ~bbFriendly;
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
         }
@@ -70,9 +68,7 @@ Movelist& IMoveRules::addRookMoves(Movelist& mvlist, Colour co,
     Bitboard bbTo {BB_NONE};
     while (bbFrom) {
         fromSq = popLsb(bbFrom);
-        bbTo = (findRankAttacks(fromSq, bbAll) |
-                findFileAttacks(fromSq, bbAll))
-               & ~bbFriendly;
+        bbTo = findRookAttacks(fromSq, bbAll) & ~bbFriendly;
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
         }
@@ -89,10 +85,8 @@ Movelist& IMoveRules::addQueenMoves(Movelist& mvlist, Colour co,
     Bitboard bbTo {BB_NONE};
     while (bbFrom) {
         fromSq = popLsb(bbFrom);
-        bbTo = (findRankAttacks(fromSq, bbAll) |
-                findFileAttacks(fromSq, bbAll) |
-                findDiagAttacks(fromSq, bbAll) |
-                findAntidiagAttacks(fromSq, bbAll))
+        bbTo = (findRookAttacks(fromSq, bbAll) |
+                findBishopAttacks(fromSq, bbAll))
                & ~bbFriendly;
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));

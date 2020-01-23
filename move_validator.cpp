@@ -14,6 +14,7 @@
 
 void MoveValidator::setVariant(Variant var) {
     // TODO: avoid wasteful creation/deletion of MoveRules objects
+    // Dependency injection?
     if (var == ORTHO) {
         rules.reset(new OrthoMoveRules());
     } else if (var == ATOMIC) {

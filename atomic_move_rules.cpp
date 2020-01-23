@@ -30,10 +30,29 @@ bool AtomicMoveRules::isInCheck(Colour co, const Position& pos) {
         return false;
     }
 }
-
+bool AtomicMoveRules::isLegalNaive(Move mv, Position& pos) {
+    /// Naive method of testing move for legality. (Assumes move is valid.)
+    /// Uses makeMove/unmakeMove for reliability at the cost of performance.
+    Colour co {pos.getSideToMove()};
+    bool isOk {false};
+    
+    pos.makeMove(mv);
+    if (pos.getUnitsBb(co, KING) == BB_NONE) {
+        // exploded own king
+        isOk = false;
+    } else if (pos.getUnitsBb(!co, KING) == BB_NONE) {
+        // exploded enemy king
+        isOk = true;
+    } else {
+        // left own king in check?
+        isOk = !isInCheck(co, pos);
+    }
+    pos.unmakeMove(mv);
+    return isOk;
+}
 
 bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
-    /// Tests valid moves for illegality. (Assumes move is valid.)
+    /// Tests valid moves for legality. (Assumes move is valid.)
     /// Illegal moves in atomic include exploding one's own king, and leaving
     /// one's king in check while the opponent's is still on the board.
     
@@ -66,7 +85,8 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
         }
     }
     
-    // Always check king moves. Illegal if stepping into check or capturing.
+    // Always check king moves. (Except castling!)
+    // Illegal if stepping into check or capturing.
     if (getPieceType(pos.getMailbox(fromSq)) == KING && !isCastling(mv)) {
         if (pos.getMailbox(toSq) != NO_PIECE) {
             return false;
@@ -78,19 +98,20 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
         }
     }
     
-    pos.makeMove(mv);
-    if (pos.getUnitsBb(co, KING) == BB_NONE) {
-        // exploded own king
-        isOk = false;
-    } else if (pos.getUnitsBb(!co, KING) == BB_NONE) {
-        // exploded enemy king
-        isOk = true;
-    } else {
-        // left own king in check?
-        isOk = !isInCheck(co, pos);
+    // If kings are connected, then all non-capture non-king moves are fine.
+    // Castling is a king move!
+    Bitboard bbKing = pos.getUnitsBb(co, KING);
+    Square sqKing = popLsb(bbKing);
+    if ((pos.getUnitsBb(!co, KING) & atomicMasks[sqKing])
+        && !isCastling(mv) && !isEp(mv)) {
+        return true;
     }
-    pos.unmakeMove(mv);
-    return isOk;
+    
+    // If kings are not connected, then check if piece is pinned.
+    // Also need to check if captures cause opening of check ray!
+    
+    // Fallback: use the reliable naive method.
+    return isLegalNaive(mv, pos);
 }
 
 Movelist AtomicMoveRules::generateLegalMoves(Position& pos) {

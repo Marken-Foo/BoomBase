@@ -143,7 +143,6 @@ void AtomicPosition::makeMove(Move mv) {
         ++fiftyMoveNum;
     }
     ++halfmoveNum;
-    
     return;
 }
 

@@ -51,6 +51,25 @@ bool AtomicMoveRules::isLegalNaive(Move mv, Position& pos) {
     return isOk;
 }
 
+Bitboard findPinned(Colour co, const Position& pos) {
+    Bitboard bbAll {pos.getUnitsBb()};
+    Bitboard bbKing {pos.getUnitsBb(co, KING)};
+    Square kingSq {lsb(bbKing)};
+    Bitboard bbOrthoPinners {findRookAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, ROOK) | pos.getUnitsBb(!co, QUEEN))};
+    Bitboard bbDiagPinners {findBishopAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, BISHOP) | pos.getUnitsBb(!co, QUEEN))};
+    Bitboard bbPinners {bbOrthoPinners | bbDiagPinners};
+    Bitboard bbPinned {BB_NONE};
+    while (bbPinners) {
+        Square pinner {popLsb(bbPinners)};
+        Bitboard ray {lineBetween[pinner][kingSq]};
+        // if ray has only one entry of my colour, that is pinned piece.
+        if (isSingle(ray & bbAll)) {
+            bbPinned |= (ray & bbAll);
+        }
+    }
+    return bbPinned;
+}
+
 bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     /// Tests valid moves for legality. (Assumes move is valid.)
     /// Illegal moves in atomic include exploding one's own king, and leaving
@@ -62,17 +81,6 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     // checking ray.)
     // So if kings are connected, only king moves/captures can be illegal.
     // If kings are not connected, we need to check for pins too.
-    const Colour co {pos.getSideToMove()};
-    bool isOk {false};
-    const Square fromSq {getFromSq(mv)};
-    const Square toSq {getToSq(mv)};
-    const Bitboard bbKing {pos.getUnitsBb(co, KING)};
-    const Bitboard bbEnemyKing {pos.getUnitsBb(!co, KING)};
-    const Bitboard bbAll {pos.getUnitsBb()};
-    const Square kingSq {lsb(bbKing)};
-    // Note: checking pieces don't actually give check if kings are connected.
-    const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
-    const bool isConnectedKings {bbEnemyKing & atomicMasks[kingSq]};
     
     // No moves are legal from a terminated game.
     if (pos.isVariantEnd()) {
@@ -82,6 +90,9 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     if (isEp(mv) || isCastling(mv)) {
         return isLegalNaive(mv, pos);
     }
+    const Colour co {pos.getSideToMove()};
+    const Square fromSq {getFromSq(mv)};
+    const Square toSq {getToSq(mv)};
     
     // Always check king moves. Illegal if stepping into check or capturing.
     // Castling not handled by this.
@@ -90,11 +101,19 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
             return false;
         } else {
             pos.ghostKing(co, fromSq);
-            isOk = !isCheckAttacked(toSq, !co, pos);
+            const bool isOk = !isCheckAttacked(toSq, !co, pos);
             pos.unghostKing(co, fromSq);
             return isOk;
         }
     }
+    const Bitboard bbKing {pos.getUnitsBb(co, KING)};
+    const Bitboard bbEnemyKing {pos.getUnitsBb(!co, KING)};
+    const Bitboard bbAll {pos.getUnitsBb()};
+    const Square kingSq {lsb(bbKing)};
+    const bool isConnectedKings {bbEnemyKing & atomicMasks[kingSq]};
+    // Note: checking pieces don't actually give check if kings are connected.
+    const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
+    
     // Always check captures. Illegal if explodes own king, else legal if
     // explodes enemy king, else legal if kings are adjacent, else see if king
     // is in check after. En passant not handled by this.
@@ -103,55 +122,63 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
             return false;
         } else if (bbEnemyKing & atomicMasks[toSq]) {
             return true;
-        } else {
-            if (isConnectedKings) {
-                return true;
-            }
-            Bitboard bbExploded = atomicMasks[toSq]
-                                  & (bbAll & ~pos.getUnitsBb(PAWN));
-            bbExploded |= toSq;
-            Bitboard bb = bbAll & ~(bbExploded | fromSq);
-            // bb now represents the occupancy bitboard if the move were made.
-            // Assumes this not a king move.
-            if (bb & knightAttacks[kingSq] & pos.getUnitsBb(!co, KNIGHT)) {
-                return false;
-            }
-            // kingSq is attacked by an enemy pawn if an own pawn on kingSq
-            // would attack that enemy pawn.
-            if (bb & pawnAttacks[co][kingSq] & pos.getUnitsBb(!co, PAWN)) {
-                return false;
-            }
-            // Checks line pieces for check.
-            Bitboard bbR {findRookAttacks(kingSq, bb)};
-            if (bb & bbR & (pos.getUnitsBb(!co, ROOK) |
-                            pos.getUnitsBb(!co, QUEEN))) {
-                return false;
-            }
-            Bitboard bbB {findBishopAttacks(kingSq, bb)};
-            if (bb & bbB & (pos.getUnitsBb(!co, BISHOP) |
-                            pos.getUnitsBb(!co, QUEEN))) {
-                return false;
-            }
+        } else if (isConnectedKings) {
             return true;
         }
+        // Need to see if king is in check after explosion.
+        Bitboard bbExploded = (atomicMasks[toSq]
+                               & (bbAll & ~pos.getUnitsBb(PAWN)))
+                              | toSq;
+        // Since kings are not connected, checks are real.
+        // If in check already, explosion must destroy all checkers.
+        if ((bbCheckers & bbExploded) != bbCheckers) {
+            return false;
+        }
+        Bitboard bb = bbAll & ~(bbExploded | fromSq);
+        // bb now represents the occupancy bitboard if the move were made.
+        // Assumes this not a king move.
+        if (bb & knightAttacks[kingSq] & pos.getUnitsBb(!co, KNIGHT)) {
+            return false;
+        }
+        // kingSq is attacked by an enemy pawn if an own pawn on kingSq
+        // would attack that enemy pawn.
+        if (bb & pawnAttacks[co][kingSq] & pos.getUnitsBb(!co, PAWN)) {
+            return false;
+        }
+        // Checks line pieces for check.
+        Bitboard bbR {findRookAttacks(kingSq, bb)};
+        if (bb & bbR & (pos.getUnitsBb(!co, ROOK) |
+                        pos.getUnitsBb(!co, QUEEN))) {
+            return false;
+        }
+        Bitboard bbB {findBishopAttacks(kingSq, bb)};
+        if (bb & bbB & (pos.getUnitsBb(!co, BISHOP) |
+                        pos.getUnitsBb(!co, QUEEN))) {
+            return false;
+        }
+        return true;
     }
     // If kings are connected, then all non-capture non-king moves are fine.
     // Assumes this is not castling and not en passant.
     if (isConnectedKings) {
         return true;
-    }
+    } 
     // If kings are not connected, then check if piece is pinned.
-    // Checkers are then also real checkers.
-    Bitboard bbOrthoPinners {findRookAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, ROOK) | pos.getUnitsBb(!co, QUEEN))};
-    Bitboard bbDiagPinners {findBishopAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, BISHOP) | pos.getUnitsBb(!co, QUEEN))};
-    Bitboard bbPinners {bbOrthoPinners | bbDiagPinners};
-    Bitboard bbPinned {BB_NONE};
-    while (bbPinners) {
-        Square pinner {popLsb(bbPinners)};
-        Bitboard ray {lineBetween[pinner][kingSq]};
-        // if ray has only one entry of my colour, that is pinned piece.
-        if (isSingle(ray & bbAll)) {
-            bbPinned |= (ray & bbAll);
+    // Checkers are then also real checkers -- might need to deal with check.
+    const Bitboard bbPinned {findPinned(co, pos)};
+    if (bbCheckers) {
+        // already dealt with king moves and captures, now interpositions.
+        if (!isSingle(bbCheckers)) {
+            // double checks are handled by king move or explosion.
+            return false;
+        } else {
+            Square checkerSq {lsb(bbCheckers)};
+            PieceType checkerType {getPieceType(pos.getMailbox(checkerSq))};
+            if (checkerType == PAWN || checkerType == KNIGHT || checkerType == KING) {
+                return false;
+            } else {
+                return ((fromSq & bbPinned) == BB_NONE) && ((toSq & lineBetween[checkerSq][kingSq]) != BB_NONE);
+            }
         }
     }
     if (fromSq & bbPinned) {
@@ -165,9 +192,9 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
             return false;
         }
     }
-    
+    return true;
     // Fallback: use the reliable naive method.
-    return isLegalNaive(mv, pos);
+    // return isLegalNaive(mv, pos);
 }
 
 

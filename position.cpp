@@ -86,7 +86,6 @@ Position& Position::fromFen(const std::string& fenStr) {
     halfmoveNum = (sideToMove == WHITE)
                   ? 2*fullmoveNum - 2
                   : 2*fullmoveNum - 1;
-    
     return *this;
 }
 
@@ -227,7 +226,6 @@ void Position::makeCastlingMove(Move mv) {
     sideToMove = !sideToMove;
     ++fiftyMoveNum;
     ++halfmoveNum;
-    
     return;
 }
 
@@ -278,6 +276,5 @@ void Position::unmakeCastlingMove(Move mv) {
     mailbox[sqRFrom] = piece(co, ROOK);
     mailbox[sqKTo] = NO_PIECE;
     mailbox[sqRTo] = NO_PIECE;
-    
     return;
 }

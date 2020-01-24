@@ -124,9 +124,6 @@ class Position {
     // Stack of unrestorable information for unmaking moves.
     std::deque<StateInfo> undoStack {};
     
-    // for efficient legal move checking
-    std::array<Square, NUM_COLOURS> kingSq {};
-    
     // --- Castling information ---
     // Information to help with validating/making castling moves.
     // Indexed in order KQkq like FEN.

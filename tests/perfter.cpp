@@ -41,10 +41,13 @@ int main() {
             std::cout << pos->pretty();
             std::cout << "Perft result for depth " << std::to_string(depth)
                       << ":\n";
+            uint64_t total {};
             for (std::pair<Move, uint64_t> split : res) {
                 std::cout << toString(split.first) << ": "
                           << std::to_string(split.second) << "\n";
+                total += split.second;
             }
+            std::cout << "Total: " << std::to_string(total) << "\n";
         }
     }
     return 0;

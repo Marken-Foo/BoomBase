@@ -64,11 +64,12 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     // checking ray.)
     // So if kings are connected, only king moves/captures can be illegal.
     // If kings are not connected, we need to check for pins too.
-    
-    Colour co {pos.getSideToMove()};
+    const Colour co {pos.getSideToMove()};
     bool isOk {false};
-    Square fromSq {getFromSq(mv)};
-    Square toSq {getToSq(mv)};
+    const Square fromSq {getFromSq(mv)};
+    const Square toSq {getToSq(mv)};
+    const Bitboard bbKing = pos.getUnitsBb(co, KING);
+    const Square sqKing = lsb(bbKing);
     
     // No moves are legal from a terminated game.
     if (pos.isVariantEnd()) {
@@ -77,27 +78,6 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     // If en passant or castling, just treat them naively.
     if (isEp(mv) || isCastling(mv)) {
         return isLegalNaive(mv, pos);
-    }
-    // Always check captures. Illegal if explodes own king, else legal if
-    // explodes enemy king, else check if it unleashes a check ray.
-    // En passant not handled by this.
-    if (pos.getMailbox(toSq) != NO_PIECE) {
-        if (pos.getUnitsBb(co, KING) & atomicMasks[toSq]) {
-            return false;
-        } else if (pos.getUnitsBb(!co, KING) & atomicMasks[toSq]) {
-            return true;
-        } else {
-/*             //TODO: check if check ray is unleashed
-            Bitboard bb {pos.getUnitsBb()};
-            Bitboard bbExploded = atomicMasks[toSq]
-                                  & (pos.getUnitsBb() ^ pos.getUnitsBb(PAWN));
-            if (getPieceType(pos.getMailbox(toSq)) == PAWN) {
-                bbExploded |= toSq;
-            }
-            bb &= ~(bbExploded | fromSq);
-            // bb now represents the occupancy bitboard if the move were made
-            findRookAttacks(lsb(pos.getUnitsBb(co, KING)), bb); */
-        }
     }
     // Always check king moves. Illegal if stepping into check or capturing.
     // Castling not handled by this.
@@ -111,10 +91,52 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
             return isOk;
         }
     }
+    
+    // Always check captures. Illegal if explodes own king, else legal if
+    // explodes enemy king, else legal if kings are adjacent, else check if king
+    // is in check after. En passant not handled by this.
+    if (pos.getMailbox(toSq) != NO_PIECE) {
+        if (bbKing & atomicMasks[toSq]) {
+            return false;
+        } else if (pos.getUnitsBb(!co, KING) & atomicMasks[toSq]) {
+            return true;
+        } else {
+            // Check if kings are adjacent
+            if (pos.getUnitsBb(!co, KING) & atomicMasks[sqKing]) {
+                return true;
+            }
+            Bitboard bb {pos.getUnitsBb()};
+            Bitboard bbExploded = atomicMasks[toSq]
+                                  & (pos.getUnitsBb() & ~pos.getUnitsBb(PAWN));
+            bbExploded |= toSq;
+            bb = bb & ~(bbExploded | fromSq);
+            // bb now represents the occupancy bitboard if the move were made.
+            // Assumes this not a king move.
+            if (bb & knightAttacks[sqKing] & pos.getUnitsBb(!co, KNIGHT)) {
+                return false;
+            }
+            // sqKing is attacked by an enemy pawn if an own pawn on sqKing
+            // would attack that enemy pawn.
+            if (bb & pawnAttacks[co][sqKing] & pos.getUnitsBb(!co, PAWN)) {
+                return false;
+            }
+            
+            // Checks line pieces for check.
+            Bitboard bbR {findRookAttacks(sqKing, bb)};
+            if (bb & bbR & (pos.getUnitsBb(!co, ROOK) |
+                            pos.getUnitsBb(!co, QUEEN))) {
+                return false;
+            }
+            Bitboard bbB {findBishopAttacks(sqKing, bb)};
+            if (bb & bbB & (pos.getUnitsBb(!co, BISHOP) |
+                            pos.getUnitsBb(!co, QUEEN))) {
+                return false;
+            }
+            return true;
+        }
+    }
     // If kings are connected, then all non-capture non-king moves are fine.
-    // Castling is a king move!
-    Bitboard bbKing = pos.getUnitsBb(co, KING);
-    Square sqKing = lsb(bbKing);
+    // Assumes this is not castling and not en passant.
     if ((pos.getUnitsBb(!co, KING) & atomicMasks[sqKing])
         && !isCastling(mv) && !isEp(mv)) {
         return true;

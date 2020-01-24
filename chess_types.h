@@ -22,7 +22,7 @@ constexpr int NUM_COLOURS {2};
 
 // Converts white to black and vice versa.
 inline Colour operator!(Colour co) {
-    return static_cast<Colour>(static_cast<int>(co) ^ 0x1);
+    return static_cast<Colour>(static_cast<int>(co) ^ 1);
 }
 
 inline Colour colour(int i) {
@@ -113,8 +113,8 @@ inline Square square(int x, int y) {
     }
 }
 
-inline int getRankIdx(Square sq) {return static_cast<int>(sq) / 8;}
-inline int getFileIdx(Square sq) {return static_cast<int>(sq) % 8;}
+inline int getRankIdx(Square sq) {return static_cast<int>(sq) >> 3;}
+inline int getFileIdx(Square sq) {return static_cast<int>(sq) & 7;}
 
 inline Square shiftN(Square sq) {return square(static_cast<int>(sq) + 8);}
 inline Square shiftS(Square sq) {return square(static_cast<int>(sq) - 8);}

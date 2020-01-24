@@ -100,6 +100,7 @@ void OrthoPosition::makeMove(Move mv) {
         ++fiftyMoveNum;
     }
     ++halfmoveNum;
+    
     return;
 }
 
@@ -165,5 +166,6 @@ void OrthoPosition::reset() {
     fiftyMoveNum = 0;
     halfmoveNum = 0;
     undoStack.clear();
+    
     return;
 }

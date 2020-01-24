@@ -86,7 +86,6 @@ Position& Position::fromFen(const std::string& fenStr) {
     halfmoveNum = (sideToMove == WHITE)
                   ? 2*fullmoveNum - 2
                   : 2*fullmoveNum - 1;
-    
     return *this;
 }
 
@@ -150,8 +149,6 @@ std::string Position::pretty() const {
     strOut += "halfmoveNum: " + std::to_string(halfmoveNum) + "\n";
     return strOut;
 }
-
-// === Helper methods (private) ===
 
 void Position::addPiece(Piece pc, Square sq) {
     // Does not maintain position validity. Do not call with NO_PIECE.

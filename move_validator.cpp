@@ -8,9 +8,13 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
+#include <vector>
+
 
 void MoveValidator::setVariant(Variant var) {
     // TODO: avoid wasteful creation/deletion of MoveRules objects
+    // Dependency injection?
     if (var == ORTHO) {
         rules.reset(new OrthoMoveRules());
     } else if (var == ATOMIC) {
@@ -29,7 +33,6 @@ uint64_t MoveValidator::perft(int depth, Position& pos) {
     
     Movelist mvlist = generateLegalMoves(pos);
     int sz = mvlist.size();
-    //std::cout<<std::to_string(sz)<<"\n"; // DEBUGGING
     // Recurse.
     for (int i = 0; i < sz; ++i) {
         pos.makeMove(mvlist[i]);
@@ -38,5 +41,20 @@ uint64_t MoveValidator::perft(int depth, Position& pos) {
         pos.unmakeMove(mvlist[i]);
     }
     return nodes;
+}
+
+std::vector<std::pair<Move, uint64_t> > MoveValidator::perftSplit(int depth, Position& pos) {
+    uint64_t nodes = 0;
+    Movelist mvlist = generateLegalMoves(pos);
+    int sz = mvlist.size();
+    std::vector<std::pair<Move, uint64_t> > res {};
+    for (int i = 0; i < sz; ++i) {
+        Move mv = mvlist[i];
+        pos.makeMove(mv);
+        uint64_t splitRes = perft(depth - 1, pos);
+        pos.unmakeMove(mv);
+        res.emplace_back(std::pair<Move, uint64_t>(mv, splitRes));
+    }
+    return res;
 }
 

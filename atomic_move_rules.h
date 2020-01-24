@@ -23,6 +23,9 @@ class AtomicMoveRules : public IMoveRules {
     
     Bitboard attacksFrom(Square sq, Colour co, PieceType pcty, const Position& pos);
     Bitboard attacksTo(Square sq, Colour co, const Position& pos);
+    
+    private:
+    bool isLegalNaive(Move mv, Position& pos);
 };
 
 #endif //#ifndef ATOMIC_MOVE_RULES_INCLUDED

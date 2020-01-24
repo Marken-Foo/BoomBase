@@ -59,6 +59,9 @@ class Position {
     std::array<Piece, NUM_SQUARES> getMailbox() const {
         return mailbox;
     }
+    Piece getMailbox(Square sq) const {
+        return mailbox[sq];
+    }
     
     Colour getSideToMove() const {
         return sideToMove;
@@ -68,6 +71,21 @@ class Position {
     }
     Square getEpSq() const {
         return epRights;
+    }
+    bool isVariantEnd() const {
+        return variantEnd;
+    }
+    
+    // Exposed for convenience for legal move checking.
+    // Intentionally restricted to king to prevent temptation to overuse method.
+    // DOES NOT MAINTAIN POSITION VALIDITY UNLESS USED TOGETHER.
+    void ghostKing(Colour co, Square sq) {
+        removePiece(co, KING, sq);
+        return;
+    }
+    void unghostKing(Colour co, Square sq) {
+        addPiece(co, KING, sq);
+        return;
     }
     
     // getters for info to execute castling
@@ -101,7 +119,8 @@ class Position {
     Square epRights {NO_SQ};
     int fiftyMoveNum {0};
     int halfmoveNum {0};
-    
+    // for variant use
+    bool variantEnd {false};
     // Stack of unrestorable information for unmaking moves.
     std::deque<StateInfo> undoStack {};
     

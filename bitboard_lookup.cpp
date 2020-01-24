@@ -17,6 +17,7 @@ std::array<Bitboard, NUM_SQUARES> kingAttacks{};
 std::array<std::array<Bitboard, NUM_SQUARES>, NUM_COLOURS> pawnAttacks{};
 std::array<Bitboard, NUM_SQUARES> diagMasks{};
 std::array<Bitboard, NUM_SQUARES> antidiagMasks{};
+std::array<std::array<Bitboard, NUM_SQUARES>, NUM_SQUARES> lineBetween;
 
 // Declaring auxiliary functions not exposed in .h
 void initialiseAllDiagMasks();
@@ -25,7 +26,7 @@ void initialiseFirstRankAttacks();
 void initialiseKingAttacks();
 void initialiseKnightAttacks();
 void initialisePawnAttacks();
-
+void initialiseLineBetween();
 
 // === Lookup table initialiser ===
 void initialiseBbLookup() {
@@ -35,6 +36,8 @@ void initialiseBbLookup() {
     initialiseKingAttacks();
     initialiseKnightAttacks();
     initialisePawnAttacks();
+    // Must be initialised after rank, file, diag attacks available!
+    initialiseLineBetween();
     return;
 }
 
@@ -74,6 +77,13 @@ Bitboard findFileAttacks(Square sq, Bitboard bbPos) {
     return firstFileAttacks[irank][ioc] & (BB_A << ifile);
 }
 
+Bitboard findRookAttacks(Square sq, Bitboard bbPos) {
+    return findRankAttacks(sq, bbPos) | findFileAttacks(sq, bbPos);
+}
+
+Bitboard findBishopAttacks(Square sq, Bitboard bbPos) {
+    return findDiagAttacks(sq, bbPos) | findAntidiagAttacks(sq, bbPos);
+}
 
 // === Auxiliary methods ===
     
@@ -173,7 +183,6 @@ void initialiseFirstFileAttacks() {
     return;
 }
 
-
 // --- Simple piece attacks ---
 void initialiseKnightAttacks() {
     for (int isq = 0; isq < NUM_SQUARES; ++isq) {
@@ -187,7 +196,6 @@ void initialiseKnightAttacks() {
     return;
 }
 
-
 void initialiseKingAttacks() {
     for (int isq = 0; isq < NUM_SQUARES; ++isq) {
         Bitboard bb {bbFromSq(square(isq))};
@@ -198,13 +206,42 @@ void initialiseKingAttacks() {
     return;
 }
 
-
 void initialisePawnAttacks() {
     // Will generate legal moves for illegal pawn positions too (1st/8th rank)
     for (int isq = 0; isq < NUM_SQUARES; ++isq) {
         Bitboard bb {bbFromSq(square(isq))};
         pawnAttacks[WHITE][isq] = shiftNE(bb) | shiftNW(bb);
         pawnAttacks[BLACK][isq] = shiftSE(bb) | shiftSW(bb);
+    }
+    return;
+}
+
+void initialiseLineBetween() {
+    // Must be intialised after rank, file and diag attacks are ready!
+    for (int isq = 0; isq < NUM_SQUARES; ++isq) {
+        Square sq1 = square(isq);
+        Bitboard bb1 = bbFromSq(sq1);
+        Bitboard bbOrtho {findRookAttacks(sq1, bb1)};
+        Bitboard bbDiag {findBishopAttacks(sq1, bb1)};
+        for (int jsq = 0; jsq <= isq; ++jsq) {
+            Square sq2 = square(jsq);
+            if (sq2 & bbOrtho) {
+                Bitboard bb = bb1 | sq2;
+                Bitboard bbBetween = {findRookAttacks(sq1, bb) &
+                                      findRookAttacks(sq2, bb)};
+                lineBetween[isq][jsq] = bbBetween;
+                lineBetween[jsq][isq] = bbBetween;
+            } else if (sq2 & bbDiag) {
+                Bitboard bb = bb1 | sq2;
+                Bitboard bbBetween = {findBishopAttacks(sq1, bb) &
+                                      findBishopAttacks(sq2, bb)};
+                lineBetween[isq][jsq] = bbBetween;
+                lineBetween[jsq][isq] = bbBetween;
+            } else {
+                lineBetween[isq][jsq] = BB_NONE;
+                lineBetween[jsq][isq] = BB_NONE;
+            }
+        }
     }
     return;
 }

@@ -53,6 +53,7 @@ class MoveValidator {
     }
     
     uint64_t perft(int depth, Position& pos);
+    std::vector<std::pair<Move, uint64_t> > perftSplit(int depth, Position& pos);
     
     
     protected:

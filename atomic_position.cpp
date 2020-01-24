@@ -88,6 +88,11 @@ void AtomicPosition::makeMove(Move mv) {
     undoStack.emplace_back(pcDest, castlingRights, epRights, fiftyMoveNum);
     explosionStack.emplace_back(pc, explosionByColour, explosionByType);
     
+    // If the enemy king is removed, set variant end flag.
+    if (!getUnitsBb(!co, KING)) {
+        variantEnd = true;
+    }
+    
     // Update ep rights.
     if ((pcty == PAWN) && (fromSq & BB_OUR_2[co]) && (toSq & BB_OUR_4[co])) {
         epRights = square((fromSq + toSq) / 2); // average gives middle square
@@ -176,6 +181,9 @@ void AtomicPosition::unmakeMove(Move mv) {
     epRights = undoState.epRights;
     fiftyMoveNum = undoState.fiftyMoveNum;
     --halfmoveNum;
+    
+    // Unmaking valid moves must reach valid, non-end-state positions.
+    variantEnd = false;
     
     // Restore all captured and exploded units.
     if (isCaptureOrEp) {

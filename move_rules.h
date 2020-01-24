@@ -47,6 +47,9 @@ class IMoveRules {
     // Castling validation needs to know which squares are attacked.
     bool isCastlingValid(CastlingRights cr, const Position& pos);
     Movelist& addCastlingMoves(Movelist& mvlist, Colour co, const Position& pos);
+    
+    // For efficient legal move generation
+    Bitboard findPinned(Colour co, const Position& pos);
 };
 
 #endif //#I_MOVE_RULES_INCLUDED

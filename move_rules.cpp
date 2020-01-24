@@ -241,3 +241,22 @@ Movelist& IMoveRules::addCastlingMoves(Movelist& mvlist, Colour co,
     }
     return mvlist;
 }
+
+Bitboard IMoveRules::findPinned(Colour co, const Position& pos) {
+    Bitboard bbAll {pos.getUnitsBb()};
+    Bitboard bbKing {pos.getUnitsBb(co, KING)};
+    Square kingSq {lsb(bbKing)};
+    Bitboard bbOrthoPinners {findRookAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, ROOK) | pos.getUnitsBb(!co, QUEEN))};
+    Bitboard bbDiagPinners {findBishopAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, BISHOP) | pos.getUnitsBb(!co, QUEEN))};
+    Bitboard bbPinners {bbOrthoPinners | bbDiagPinners};
+    Bitboard bbPinned {BB_NONE};
+    while (bbPinners) {
+        Square pinner {popLsb(bbPinners)};
+        Bitboard ray {lineBetween[pinner][kingSq]};
+        // if ray has only one entry of my colour, that is pinned piece.
+        if (isSingle(ray & bbAll)) {
+            bbPinned |= (ray & bbAll);
+        }
+    }
+    return bbPinned;
+}

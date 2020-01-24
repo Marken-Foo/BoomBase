@@ -30,6 +30,7 @@ bool AtomicMoveRules::isInCheck(Colour co, const Position& pos) {
         return false;
     }
 }
+
 bool AtomicMoveRules::isLegalNaive(Move mv, Position& pos) {
     /// Naive method of testing move for legality. (Assumes move is valid.)
     /// Uses makeMove/unmakeMove for reliability at the cost of performance.
@@ -51,36 +52,10 @@ bool AtomicMoveRules::isLegalNaive(Move mv, Position& pos) {
     return isOk;
 }
 
-Bitboard findPinned(Colour co, const Position& pos) {
-    Bitboard bbAll {pos.getUnitsBb()};
-    Bitboard bbKing {pos.getUnitsBb(co, KING)};
-    Square kingSq {lsb(bbKing)};
-    Bitboard bbOrthoPinners {findRookAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, ROOK) | pos.getUnitsBb(!co, QUEEN))};
-    Bitboard bbDiagPinners {findBishopAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, BISHOP) | pos.getUnitsBb(!co, QUEEN))};
-    Bitboard bbPinners {bbOrthoPinners | bbDiagPinners};
-    Bitboard bbPinned {BB_NONE};
-    while (bbPinners) {
-        Square pinner {popLsb(bbPinners)};
-        Bitboard ray {lineBetween[pinner][kingSq]};
-        // if ray has only one entry of my colour, that is pinned piece.
-        if (isSingle(ray & bbAll)) {
-            bbPinned |= (ray & bbAll);
-        }
-    }
-    return bbPinned;
-}
-
 bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     /// Tests valid moves for legality. (Assumes move is valid.)
     /// Illegal moves in atomic include exploding one's own king, and leaving
     /// one's king in check while the opponent's is still on the board.
-    
-    // A move can be illegal only if it is a king move, capture/ep, or move of a
-    // pinned piece while kings are not connected.
-    // (In atomic, captures can explode multiple pieces on a line to open up a
-    // checking ray.)
-    // So if kings are connected, only king moves/captures can be illegal.
-    // If kings are not connected, we need to check for pins too.
     
     // No moves are legal from a terminated game.
     if (pos.isVariantEnd()) {
@@ -163,40 +138,35 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
     if (isConnectedKings) {
         return true;
     } 
-    // If kings are not connected, then check if piece is pinned.
-    // Checkers are then also real checkers -- might need to deal with check.
-    const Bitboard bbPinned {findPinned(co, pos)};
+    // If kings are not connected, checkers are real; need to address check.
+    const Bitboard bbPinned {IMoveRules::findPinned(co, pos)};
     if (bbCheckers) {
-        // already dealt with king moves and captures, now interpositions.
+        // Assumes not a king move nor capture; verify interpositions.
         if (!isSingle(bbCheckers)) {
-            // double checks are handled by king move or explosion.
+            // double checks are handled by king move or capture/explosion.
             return false;
         } else {
             Square checkerSq {lsb(bbCheckers)};
             PieceType checkerType {getPieceType(pos.getMailbox(checkerSq))};
-            if (checkerType == PAWN || checkerType == KNIGHT || checkerType == KING) {
+            // Cannot interpose a contact check.
+            if (checkerType == PAWN || checkerType == KNIGHT) {
                 return false;
             } else {
-                return ((fromSq & bbPinned) == BB_NONE) && ((toSq & lineBetween[checkerSq][kingSq]) != BB_NONE);
+                // Verify interposition for line pieces.
+                return ((fromSq & bbPinned) == BB_NONE) &&
+                       ((toSq & lineBetween[checkerSq][kingSq]) != BB_NONE);
             }
         }
     }
+    // Finally check for pinned pieces, which can only move along the pin line.
     if (fromSq & bbPinned) {
-        if (lineBetween[fromSq][toSq] & kingSq || lineBetween[fromSq][kingSq] & toSq || lineBetween[toSq][kingSq] & fromSq) {
-            if (bbCheckers) {
-                return false;
-            } else {
-                return true;
-            }
-        } else {
-            return false;
-        }
+        return (lineBetween[fromSq][kingSq] & toSq) ||
+               (lineBetween[toSq][kingSq] & fromSq);
     }
     return true;
     // Fallback: use the reliable naive method.
     // return isLegalNaive(mv, pos);
 }
-
 
 Movelist AtomicMoveRules::generateLegalMoves(Position& pos) {
     Colour co {pos.getSideToMove()};

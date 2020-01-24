@@ -4,6 +4,7 @@
 #include "atomic_position.h"
 #include "atomic_capture_masks.h"
 
+#include <chrono>
 #include <cstdint>
 #include <iostream>
 #include <string>
@@ -36,7 +37,11 @@ int main() {
             if (depth > 15) {break;}
             
             std::cout << "Calculating...\r";
+            
+            auto timeStart = std::chrono::steady_clock::now();
             std::vector<std::pair<Move, uint64_t> > res = arbiter.perftSplit(depth, *pos);
+            auto timeEnd = std::chrono::steady_clock::now();
+            auto timeTaken = timeEnd - timeStart;
             
             std::cout << pos->pretty();
             std::cout << "Perft result for depth " << std::to_string(depth)
@@ -48,6 +53,7 @@ int main() {
                 total += split.second;
             }
             std::cout << "Total: " << std::to_string(total) << "\n";
+            std::cout << "Time taken: " << std::chrono::duration<double, std::milli>(timeTaken).count() << " ms\n";
         }
     }
     return 0;

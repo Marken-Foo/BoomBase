@@ -91,7 +91,6 @@ void AtomicPosition::makeMove(Move mv) {
     // If the enemy king is removed, set variant end flag.
     if (!getUnitsBb(!co, KING)) {
         variantEnd = true;
-        kingSq[!co] = NO_SQ;
     }
     
     // Update ep rights.
@@ -145,9 +144,6 @@ void AtomicPosition::makeMove(Move mv) {
     }
     ++halfmoveNum;
     
-    if (pcty == KING) {
-        kingSq[co] = getUnitsBb(co, KING) ? toSq : NO_SQ;
-    }
     return;
 }
 
@@ -219,10 +215,6 @@ void AtomicPosition::unmakeMove(Move mv) {
         addPiece(co, pcty, fromSq);
         removePiece(co, pcty, toSq);
     }
-    
-    if (pcty == KING) {
-        kingSq[co] = fromSq;
-    }
     return;
 }
 
@@ -238,6 +230,5 @@ void AtomicPosition::reset() {
     halfmoveNum = 0;
     undoStack.clear();
     explosionStack.clear();
-    kingSq.fill(NO_SQ);
     return;
 }

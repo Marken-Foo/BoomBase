@@ -22,6 +22,8 @@ Bitboard findFileAttacks(Square sq, Bitboard bbPos);
 Bitboard findRookAttacks(Square sq, Bitboard bbPos);
 Bitboard findBishopAttacks(Square sq, Bitboard bbPos);
 
+Bitboard aligned(Square sq1, Square sq2, Square sq3);
+
 // === Lookup tables ===
 // **Must be generated before doing any lookup!**
 

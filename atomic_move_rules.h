@@ -26,6 +26,16 @@ class AtomicMoveRules : public IMoveRules {
     
     private:
     bool isLegalNaive(Move mv, Position& pos);
+    Movelist generateLegalMovesNaive(Position& pos);
+    Movelist& addLegalKingMoves(Movelist& mvlist, Position& pos);
+    Movelist& addLegalKnightMoves(Movelist& mvlist, Position& pos);
+    Movelist& addLegalBishopMoves(Movelist& mvlist, Position& pos);
+    Movelist& addLegalRookMoves(Movelist& mvlist, Position& pos);
+    Movelist& addLegalQueenMoves(Movelist& mvlist, Position& pos);
+    Movelist& addLegalPawnMoves(Movelist& mvlist, Position& pos);
+    
+    Movelist legalOnly(Position& pos);
+    bool isCaptureLegal(Square fromSq, Square toSq, const Position& pos);
 };
 
 #endif //#ifndef ATOMIC_MOVE_RULES_INCLUDED

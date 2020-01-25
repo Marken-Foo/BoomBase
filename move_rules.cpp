@@ -14,11 +14,9 @@ Movelist& IMoveRules::addKingMoves(Movelist& mvlist, Colour co,
                                    const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, KING)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
-    Square fromSq {NO_SQ};
-    Bitboard bbTo {BB_NONE};
     while (bbFrom) {
-        fromSq = popLsb(bbFrom);
-        bbTo = kingAttacks[fromSq] & ~bbFriendly;
+        Square fromSq {popLsb(bbFrom)};
+        Bitboard bbTo {kingAttacks[fromSq] & ~bbFriendly};
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
         }
@@ -30,11 +28,9 @@ Movelist& IMoveRules::addKnightMoves(Movelist& mvlist, Colour co,
                                      const Position& pos) {
     Bitboard bbFrom {pos.getUnitsBb(co, KNIGHT)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
-    Square fromSq {NO_SQ};
-    Bitboard bbTo {BB_NONE};
     while (bbFrom) {
-        fromSq = popLsb(bbFrom);
-        bbTo = knightAttacks[fromSq] & ~bbFriendly;
+        Square fromSq {popLsb(bbFrom)};
+        Bitboard bbTo {knightAttacks[fromSq] & ~bbFriendly};
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
         }
@@ -47,11 +43,9 @@ Movelist& IMoveRules::addBishopMoves(Movelist& mvlist, Colour co,
     Bitboard bbFrom {pos.getUnitsBb(co, BISHOP)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Bitboard bbAll {pos.getUnitsBb()};
-    Square fromSq {NO_SQ};
-    Bitboard bbTo {BB_NONE};
     while (bbFrom) {
-        fromSq = popLsb(bbFrom);
-        bbTo = findBishopAttacks(fromSq, bbAll) & ~bbFriendly;
+        Square fromSq {popLsb(bbFrom)};
+        Bitboard bbTo {findBishopAttacks(fromSq, bbAll) & ~bbFriendly};
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
         }
@@ -64,11 +58,9 @@ Movelist& IMoveRules::addRookMoves(Movelist& mvlist, Colour co,
     Bitboard bbFrom {pos.getUnitsBb(co, ROOK)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Bitboard bbAll {pos.getUnitsBb()};
-    Square fromSq {NO_SQ};
-    Bitboard bbTo {BB_NONE};
     while (bbFrom) {
-        fromSq = popLsb(bbFrom);
-        bbTo = findRookAttacks(fromSq, bbAll) & ~bbFriendly;
+        Square fromSq {popLsb(bbFrom)};
+        Bitboard bbTo {findRookAttacks(fromSq, bbAll) & ~bbFriendly};
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
         }
@@ -81,27 +73,11 @@ Movelist& IMoveRules::addQueenMoves(Movelist& mvlist, Colour co,
     Bitboard bbFrom {pos.getUnitsBb(co, QUEEN)};
     Bitboard bbFriendly {pos.getUnitsBb(co)};
     Bitboard bbAll {pos.getUnitsBb()};
-    Square fromSq {NO_SQ};
-    Bitboard bbTo {BB_NONE};
-    while (bbFrom) {
-        fromSq = popLsb(bbFrom);
-        bbTo = (findRookAttacks(fromSq, bbAll) |
-                findBishopAttacks(fromSq, bbAll))
-               & ~bbFriendly;
-        while (bbTo) {
-            mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
-        }
-    }
-    return mvlist;
-}
-
-Movelist& IMoveRules::addPawnAttacks(Movelist& mvlist, Colour co,
-                                     const Position& pos) {
-    Bitboard bbFrom {pos.getUnitsBb(co, PAWN)};
-    Bitboard bbEnemy {pos.getUnitsBb(!co)};
     while (bbFrom) {
         Square fromSq {popLsb(bbFrom)};
-        Bitboard bbTo {pawnAttacks[co][fromSq] & bbEnemy};
+        Bitboard bbTo {(findRookAttacks(fromSq, bbAll) |
+                        findBishopAttacks(fromSq, bbAll))
+                       & ~bbFriendly};
         while (bbTo) {
             mvlist.push_back(buildMove(fromSq, popLsb(bbTo)));
         }
@@ -125,27 +101,13 @@ Movelist& IMoveRules::addPawnMoves(Movelist& mvlist, Colour co,
         Bitboard bbAttacks {pawnAttacks[co][fromSq] & bbEnemy};
         while (bbAttacks) {
             toSq = popLsb(bbAttacks);
-            if (toSq & BB_OUR_8[co]) {
-                mvlist.push_back(buildPromotion(fromSq, toSq, KNIGHT));
-                mvlist.push_back(buildPromotion(fromSq, toSq, BISHOP));
-                mvlist.push_back(buildPromotion(fromSq, toSq, ROOK));
-                mvlist.push_back(buildPromotion(fromSq, toSq, QUEEN));
-            } else {
-                mvlist.push_back(buildMove(fromSq, toSq));
-            }
+            addPawnMoves(mvlist, co, fromSq, toSq);
         }
         // Generate single (and promotions) and double moves.
         toSq = (co == WHITE) ? shiftN(fromSq) : shiftS(fromSq);
         if (!(toSq & bbAll)) {
-            // Single moves (and promtions).
-            if (toSq & BB_OUR_8[co]) {
-                mvlist.push_back(buildPromotion(fromSq, toSq, KNIGHT));
-                mvlist.push_back(buildPromotion(fromSq, toSq, BISHOP));
-                mvlist.push_back(buildPromotion(fromSq, toSq, ROOK));
-                mvlist.push_back(buildPromotion(fromSq, toSq, QUEEN));
-            } else {
-                mvlist.push_back(buildMove(fromSq, toSq));
-            }
+            // Single moves (and promotions).
+            addPawnMoves(mvlist, co, fromSq, toSq);
             // Double moves
             if (fromSq & BB_OUR_2[co]) {
                 toSq = (co == WHITE)
@@ -174,6 +136,21 @@ Movelist& IMoveRules::addEpMoves(Movelist& mvlist, Colour co,
     while (bbEpPawns) {
         fromSq = popLsb(bbEpPawns);
         mvlist.push_back(buildEp(fromSq, toSq));
+    }
+    return mvlist;
+}
+
+Movelist& IMoveRules::addPawnMoves(Movelist& mvlist, Colour co,
+                                   Square fromSq, Square toSq) {
+    /// Helper function to write pawn moves to movelist, given from/to squares.
+    ///
+    if (toSq & BB_OUR_8[co]) {
+        mvlist.push_back(buildPromotion(fromSq, toSq, KNIGHT));
+        mvlist.push_back(buildPromotion(fromSq, toSq, BISHOP));
+        mvlist.push_back(buildPromotion(fromSq, toSq, ROOK));
+        mvlist.push_back(buildPromotion(fromSq, toSq, QUEEN));
+    } else {
+        mvlist.push_back(buildMove(fromSq, toSq));
     }
     return mvlist;
 }

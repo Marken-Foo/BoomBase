@@ -39,10 +39,10 @@ class IMoveRules {
     Movelist& addBishopMoves(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addRookMoves(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addQueenMoves(Movelist& mvlist, Colour co, const Position& pos);
-
-    Movelist& addPawnAttacks(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addPawnMoves(Movelist& mvlist, Colour co, const Position& pos);
     Movelist& addEpMoves(Movelist& mvlist, Colour co, const Position& pos);
+    
+    Movelist& addPawnMoves(Movelist& mvlist, Colour co, Square fromSq, Square toSq);
     
     // Castling validation needs to know which squares are attacked.
     bool isCastlingValid(CastlingRights cr, const Position& pos);

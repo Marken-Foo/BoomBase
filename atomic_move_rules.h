@@ -33,8 +33,11 @@ class AtomicMoveRules : public IMoveRules {
     Movelist& addLegalBishopMoves(Movelist& mvlist, Position& pos);
     Movelist& addLegalRookMoves(Movelist& mvlist, Position& pos);
     Movelist& addLegalQueenMoves(Movelist& mvlist, Position& pos);
-    Movelist& addLegalPawnCaptures(Movelist& mvlist, Position& pos);
     Movelist& addLegalPawnMoves(Movelist& mvlist, Position& pos);
+    
+    Movelist& addLegalPawnCaptures(Movelist& mvlist, Position& pos);
+    Movelist& addLegalPawnPushes(Movelist& mvlist, Position& pos);
+    Movelist& addLegalPawnDoublePushes(Movelist& mvlist, Position& pos);
     
     Movelist legalOnly(Position& pos);
     bool isCaptureLegal(Square fromSq, Square toSq, const Position& pos);

@@ -196,7 +196,7 @@ bool AtomicMoveRules::isLegal(Move mv, Position& pos) {
 }
 
 Movelist AtomicMoveRules::generateLegalMoves(Position& pos) {
-    return generateLegalMovesNaive(pos);
+    return legalOnly(pos);
 }
 
 Movelist AtomicMoveRules::generateLegalMovesNaive(Position& pos) {
@@ -241,12 +241,12 @@ Movelist AtomicMoveRules::legalOnly(Position& pos) {
     }
     // Generating by piece, rather than by capture/quiet/etc, since this will be
     // useful for PGN validation, which gives a known piece type for each move.
-    /* addLegalKingMoves(mvlist, pos);
-    addLegalKnightMoves(mvlist, pos); //TODO
-    addLegalBishopMoves(mvlist, pos); //TODO
-    addLegalRookMoves(mvlist, pos); //TODO
-    addLegalQueenMoves(mvlist, pos); //TODO
-    addLegalPawnMoves(mvlist, pos); //TODO */
+    addLegalKingMoves(mvlist, pos);
+    addLegalKnightMoves(mvlist, pos);
+    addLegalBishopMoves(mvlist, pos);
+    addLegalRookMoves(mvlist, pos);
+    addLegalQueenMoves(mvlist, pos);
+    addLegalPawnMoves(mvlist, pos);
     return mvlist;
 }
 
@@ -275,6 +275,7 @@ Movelist& AtomicMoveRules::addLegalKingMoves(Movelist& mvlist, Position& pos) {
     return mvlist;
 }
 
+// TODO: maybe refactor NBRQ legal move generation into ONE method.
 Movelist& AtomicMoveRules::addLegalKnightMoves(Movelist& mvlist, Position& pos) {
     const Colour co {pos.getSideToMove()};
     Bitboard bbFrom {pos.getUnitsBb(co, KNIGHT)};
@@ -438,6 +439,13 @@ Movelist& AtomicMoveRules::addLegalQueenMoves(Movelist& mvlist, Position& pos) {
     return mvlist;
 }
 
+Movelist& AtomicMoveRules::addLegalPawnMoves(Movelist& mvlist, Position& pos) {
+    addLegalPawnCaptures(mvlist, pos);
+    addLegalPawnPushes(mvlist, pos);
+    addLegalPawnDoublePushes(mvlist, pos);
+    return mvlist;
+}
+
 Movelist& AtomicMoveRules::addLegalPawnCaptures(Movelist& mvlist, Position& pos) {
     const Colour co {pos.getSideToMove()};
     Bitboard bbFrom {pos.getUnitsBb(co, PAWN)};
@@ -448,54 +456,81 @@ Movelist& AtomicMoveRules::addLegalPawnCaptures(Movelist& mvlist, Position& pos)
         while (bbTo) {
             Square toSq {popLsb(bbTo)};
             if (isCaptureLegal(fromSq, toSq, pos)) {
-                if (toSq & BB_OUR_8[co]) {
-                    mvlist.push_back(buildPromotion(fromSq, toSq, KNIGHT));
-                    mvlist.push_back(buildPromotion(fromSq, toSq, BISHOP));
-                    mvlist.push_back(buildPromotion(fromSq, toSq, ROOK));
-                    mvlist.push_back(buildPromotion(fromSq, toSq, QUEEN));
-                } else {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
+                IMoveRules::addPawnMoves(mvlist, co, fromSq, toSq);
             }
         }
     }
     return mvlist;
 }
 
-Movelist& AtomicMoveRules::addLegalPawnMoves(Movelist& mvlist, Position& pos) {
+Movelist& AtomicMoveRules::addLegalPawnPushes(Movelist& mvlist, Position& pos) {
     const Colour co {pos.getSideToMove()};
     Bitboard bbFrom {pos.getUnitsBb(co, PAWN)};
-    Square toSq {NO_SQ};
     Bitboard bbAll {pos.getUnitsBb()};
     
     while (bbFrom) {
         Square fromSq {popLsb(bbFrom)};
-        // Generate single (and promotions) and double moves.
-        toSq = (co == WHITE) ? shiftN(fromSq) : shiftS(fromSq);
-        if (!(toSq & bbAll)) {
-            if (isConnectedKings(pos)) {
-                // Single moves (and promotions).
-                if (toSq & BB_OUR_8[co]) {
-                    mvlist.push_back(buildPromotion(fromSq, toSq, KNIGHT));
-                    mvlist.push_back(buildPromotion(fromSq, toSq, BISHOP));
-                    mvlist.push_back(buildPromotion(fromSq, toSq, ROOK));
-                    mvlist.push_back(buildPromotion(fromSq, toSq, QUEEN));
-                } else {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-            }
-            // Double moves
-            if (fromSq & BB_OUR_2[co]) {
-                toSq = (co == WHITE)
-                    ? shiftN(shiftN(fromSq))
-                    : shiftS(shiftS(fromSq));
-                if (!(toSq & bbAll)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-            }
+        Square toSq {shiftForward(fromSq, co)};
+        if (toSq & bbAll) {
+            // pawn push is blocked
+            continue;
         }
+        if (isConnectedKings(pos)) {
+            IMoveRules::addPawnMoves(mvlist, co, fromSq, toSq);
+            continue;
+        }
+        const Square kingSq {lsb(pos.getUnitsBb(co, KING))};
+        const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
+        const Bitboard bbPinned {IMoveRules::findPinned(co, pos)};
+        if (bbCheckers) {
+            if (isInterpositionLegal(fromSq, toSq, pos)) {
+                IMoveRules::addPawnMoves(mvlist, co, fromSq, toSq);
+            }
+            continue;
+        }
+        if (fromSq & bbPinned) {
+            if ((lineBetween[fromSq][kingSq] & toSq) || (lineBetween[toSq][kingSq] & fromSq)) {
+                IMoveRules::addPawnMoves(mvlist, co, fromSq, toSq);
+            }
+            continue;
+        }
+        IMoveRules::addPawnMoves(mvlist, co, fromSq, toSq);
     }
-    return mvlist;
+}
+
+Movelist& AtomicMoveRules::addLegalPawnDoublePushes(Movelist& mvlist, Position& pos) {
+    const Colour co {pos.getSideToMove()};
+    Bitboard bbFrom {pos.getUnitsBb(co, PAWN) & BB_OUR_2[co]};
+    Bitboard bbAll {pos.getUnitsBb()};
+    
+    while (bbFrom) {
+        Square fromSq {popLsb(bbFrom)};
+        Square toSq {shiftForward(shiftForward(fromSq, co), co)};
+        if ((shiftForward(fromSq, co) | toSq) & bbAll) {
+            // pawn push is blocked
+            continue;
+        }
+        if (isConnectedKings(pos)) {
+            mvlist.push_back(buildMove(fromSq, toSq));
+            continue;
+        }
+        const Square kingSq {lsb(pos.getUnitsBb(co, KING))};
+        const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
+        const Bitboard bbPinned {IMoveRules::findPinned(co, pos)};
+        if (bbCheckers) {
+            if (isInterpositionLegal(fromSq, toSq, pos)) {
+                mvlist.push_back(buildMove(fromSq, toSq));
+            }
+            continue;
+        }
+        if (fromSq & bbPinned) {
+            if ((lineBetween[fromSq][kingSq] & toSq) || (lineBetween[toSq][kingSq] & fromSq)) {
+                mvlist.push_back(buildMove(fromSq, toSq));
+            }
+            continue;
+        }
+        mvlist.push_back(buildMove(fromSq, toSq));
+    }
 }
 
 Bitboard AtomicMoveRules::attacksFrom(Square sq, Colour co, PieceType pcty,

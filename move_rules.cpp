@@ -163,10 +163,10 @@ bool IMoveRules::isCastlingValid(CastlingRights cr, const Position& pos) {
     /// king passes through any attacked squares. Ignores side to move.
     ///
     /// Subtlety 1: the attacked squares test looks at the diagram "as-is",
-    /// including the involved king and rook.
+    /// **including the involved king and rook**.
     /// Subtlety 2: because of subtlety 1, there needs to be an additional test
-    /// for checks after the move has been *made*. (Not in regular chess, but in
-    /// 960, or with certain fairy pieces, it is *necessary*.)
+    /// for checks after the move has been made. (Not in regular chess, but in
+    /// 960, or with certain fairy pieces, it is **necessary**.)
     
     // Test if king or relevant rook have moved.
     if (!(cr & pos.getCastlingRights())) {
@@ -221,19 +221,26 @@ Movelist& IMoveRules::addCastlingMoves(Movelist& mvlist, Colour co,
 }
 
 Bitboard IMoveRules::findPinned(Colour co, const Position& pos) {
+    /// Returns bitboard of all absolutely pinned pieces of colour co.
+    /// Assumes one king and no cannonlike or hopperlike fairy pieces.
     Bitboard bbAll {pos.getUnitsBb()};
+    Bitboard bbFriendly {pos.getUnitsBb(co)};
     Bitboard bbKing {pos.getUnitsBb(co, KING)};
     Square kingSq {lsb(bbKing)};
-    Bitboard bbOrthoPinners {findRookAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, ROOK) | pos.getUnitsBb(!co, QUEEN))};
-    Bitboard bbDiagPinners {findBishopAttacks(kingSq, bbKing) & (pos.getUnitsBb(!co, BISHOP) | pos.getUnitsBb(!co, QUEEN))};
+    Bitboard bbOrthoPinners {findRookAttacks(kingSq, bbKing)
+                             & (pos.getUnitsBb(!co, ROOK) |
+                                pos.getUnitsBb(!co, QUEEN))};
+    Bitboard bbDiagPinners {findBishopAttacks(kingSq, bbKing)
+                            & (pos.getUnitsBb(!co, BISHOP) |
+                               pos.getUnitsBb(!co, QUEEN))};
     Bitboard bbPinners {bbOrthoPinners | bbDiagPinners};
     Bitboard bbPinned {BB_NONE};
     while (bbPinners) {
         Square pinner {popLsb(bbPinners)};
-        Bitboard ray {lineBetween[pinner][kingSq]};
-        // if ray has only one entry of my colour, that is pinned piece.
-        if (isSingle(ray & bbAll)) {
-            bbPinned |= (ray & bbAll);
+        Bitboard rayPieces {lineBetween[pinner][kingSq] & bbAll};
+        // if ray has one entry which is of colour co, that is a pinned piece.
+        if (isSingle(rayPieces)) {
+            bbPinned |= rayPieces & bbFriendly;
         }
     }
     return bbPinned;

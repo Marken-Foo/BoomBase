@@ -118,6 +118,9 @@ inline int getFileIdx(Square sq) {return static_cast<int>(sq) & 7;}
 
 inline Square shiftN(Square sq) {return square(static_cast<int>(sq) + 8);}
 inline Square shiftS(Square sq) {return square(static_cast<int>(sq) - 8);}
+inline Square shiftForward(Square sq, Colour co) {
+    return co == WHITE ? shiftN(sq) : shiftS(sq);
+}
 
 
 // === CastlingRights ===

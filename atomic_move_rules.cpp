@@ -233,7 +233,7 @@ Movelist AtomicMoveRules::legalOnly(Position& pos) {
     addCastlingMoves(mvlist, co, pos);
     // Test for legality naively for these.
     for (auto it = mvlist.begin(); it != mvlist.end();) {
-        if (isLegal(*it, pos)) {
+        if (isLegalNaive(*it, pos)) {
             ++it;
         } else {
             it = mvlist.erase(it);
@@ -243,9 +243,9 @@ Movelist AtomicMoveRules::legalOnly(Position& pos) {
     // useful for PGN validation, which gives a known piece type for each move.
     addLegalKingMoves(mvlist, pos);
     addLegalKnightMoves(mvlist, pos);
-    addLegalBishopMoves(mvlist, pos);
-    addLegalRookMoves(mvlist, pos);
-    addLegalQueenMoves(mvlist, pos);
+    addLegalSliderMoves(mvlist, pos, BISHOP);
+    addLegalSliderMoves(mvlist, pos, ROOK);
+    addLegalSliderMoves(mvlist, pos, QUEEN);
     addLegalPawnMoves(mvlist, pos);
     return mvlist;
 }
@@ -254,11 +254,9 @@ Movelist& AtomicMoveRules::addLegalKingMoves(Movelist& mvlist, Position& pos) {
     const Colour co {pos.getSideToMove()};
     Bitboard bbFrom = pos.getUnitsBb(co, KING);
     const Bitboard bbAll = pos.getUnitsBb();
-    
     // Verify that king's destination square is not occupied (kings can't
     // capture) and not check-attacked (can be attacked if enemy king is
     // adjacent). Ghost/unghost king for the latter.
-    
     while (bbFrom) {
         Square fromSq {popLsb(bbFrom)};
         pos.ghostKing(co, fromSq);
@@ -275,14 +273,62 @@ Movelist& AtomicMoveRules::addLegalKingMoves(Movelist& mvlist, Position& pos) {
     return mvlist;
 }
 
-// TODO: maybe refactor NBRQ legal move generation into ONE method.
-Movelist& AtomicMoveRules::addLegalKnightMoves(Movelist& mvlist, Position& pos) {
+Movelist& AtomicMoveRules::addLegalSliderMoves(Movelist& mvlist, const Position& pos, PieceType pcty) {
+    // for rook, bishop and queen moves.
+    const Colour co {pos.getSideToMove()};
+    Bitboard bbFrom {pos.getUnitsBb(co, pcty)};
+    const Bitboard bbFriendly {pos.getUnitsBb(co)};
+    const Bitboard bbAll {pos.getUnitsBb()};
+    while (bbFrom) {
+        Square fromSq {popLsb(bbFrom)};
+        Bitboard bbTo {BB_NONE};
+        if (pcty == BISHOP || pcty == QUEEN) {
+            bbTo |= findBishopAttacks(fromSq, bbAll);
+        }
+        if (pcty == ROOK || pcty == QUEEN) {
+            bbTo |= findRookAttacks(fromSq, bbAll);
+        }
+        bbTo &= ~bbFriendly;
+        while (bbTo) {
+            Square toSq {popLsb(bbTo)};
+            if (pos.getMailbox(toSq) != NO_PIECE) {
+                if (isCaptureLegal(fromSq, toSq, pos)) {
+                    mvlist.push_back(buildMove(fromSq, toSq));
+                }
+                continue;
+            }
+            if (isConnectedKings(pos)) {
+                mvlist.push_back(buildMove(fromSq, toSq));
+                continue;
+            }
+            const Square kingSq {lsb(pos.getUnitsBb(co, KING))};
+            const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
+            const Bitboard bbPinned {IMoveRules::findPinned(co, pos)};
+            if (bbCheckers) {
+                if (isInterpositionLegal(fromSq, toSq, pos)) {
+                    mvlist.push_back(buildMove(fromSq, toSq));
+                }
+                continue;
+            }
+            if (fromSq & bbPinned) {
+                if ((lineBetween[fromSq][kingSq] & toSq) || (lineBetween[toSq][kingSq] & fromSq)) {
+                    mvlist.push_back(buildMove(fromSq, toSq));
+                }
+                continue;
+            }
+            mvlist.push_back(buildMove(fromSq, toSq));
+        }
+    }
+    return mvlist;
+}
+
+Movelist& AtomicMoveRules::addLegalKnightMoves(Movelist& mvlist, const Position& pos) {
     const Colour co {pos.getSideToMove()};
     Bitboard bbFrom {pos.getUnitsBb(co, KNIGHT)};
     const Bitboard bbFriendly {pos.getUnitsBb(co)};
     while (bbFrom) {
         Square fromSq {popLsb(bbFrom)};
-        // can separate to 2 bbTo bitboards -- one for captures, one for not.
+        // TODO: can separate to 2 bbTo bitboards -- one for captures, one for not.
         Bitboard bbTo {knightAttacks[fromSq] & ~bbFriendly};
         while (bbTo) {
             Square toSq {popLsb(bbTo)};
@@ -308,129 +354,6 @@ Movelist& AtomicMoveRules::addLegalKnightMoves(Movelist& mvlist, Position& pos) 
             if (fromSq & bbPinned) {
                 // Knights cannot move along a pin ray.
                 // (unless there are nightriders...)
-                continue;
-            }
-            mvlist.push_back(buildMove(fromSq, toSq));
-        }
-    }
-    return mvlist;
-}
-
-Movelist& AtomicMoveRules::addLegalBishopMoves(Movelist& mvlist, Position& pos) {
-    const Colour co {pos.getSideToMove()};
-    Bitboard bbFrom {pos.getUnitsBb(co, BISHOP)};
-    const Bitboard bbFriendly {pos.getUnitsBb(co)};
-    const Bitboard bbAll {pos.getUnitsBb()};
-    while (bbFrom) {
-        Square fromSq {popLsb(bbFrom)};
-        Bitboard bbTo {findBishopAttacks(fromSq, bbAll) & ~bbFriendly};
-        while (bbTo) {
-            Square toSq {popLsb(bbTo)};
-            if (pos.getMailbox(toSq) != NO_PIECE) {
-                if (isCaptureLegal(fromSq, toSq, pos)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            if (isConnectedKings(pos)) {
-                mvlist.push_back(buildMove(fromSq, toSq));
-                continue;
-            }
-            const Square kingSq {lsb(pos.getUnitsBb(co, KING))};
-            const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
-            const Bitboard bbPinned {IMoveRules::findPinned(co, pos)};
-            if (bbCheckers) {
-                if (isInterpositionLegal(fromSq, toSq, pos)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            if (fromSq & bbPinned) {
-                if ((lineBetween[fromSq][kingSq] & toSq) || (lineBetween[toSq][kingSq] & fromSq)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            mvlist.push_back(buildMove(fromSq, toSq));
-        }
-    }
-    return mvlist;
-}
-
-Movelist& AtomicMoveRules::addLegalRookMoves(Movelist& mvlist, Position& pos) {
-    const Colour co {pos.getSideToMove()};
-    Bitboard bbFrom {pos.getUnitsBb(co, ROOK)};
-    const Bitboard bbFriendly {pos.getUnitsBb(co)};
-    const Bitboard bbAll {pos.getUnitsBb()};
-    while (bbFrom) {
-        Square fromSq {popLsb(bbFrom)};
-        Bitboard bbTo {findRookAttacks(fromSq, bbAll) & ~bbFriendly};
-        while (bbTo) {
-            Square toSq {popLsb(bbTo)};
-            if (pos.getMailbox(toSq) != NO_PIECE) {
-                if (isCaptureLegal(fromSq, toSq, pos)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            if (isConnectedKings(pos)) {
-                mvlist.push_back(buildMove(fromSq, toSq));
-                continue;
-            }
-            const Square kingSq {lsb(pos.getUnitsBb(co, KING))};
-            const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
-            const Bitboard bbPinned {IMoveRules::findPinned(co, pos)};
-            if (bbCheckers) {
-                if (isInterpositionLegal(fromSq, toSq, pos)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            if (fromSq & bbPinned) {
-                if ((lineBetween[fromSq][kingSq] & toSq) || (lineBetween[toSq][kingSq] & fromSq)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            mvlist.push_back(buildMove(fromSq, toSq));
-        }
-    }
-    return mvlist;
-}
-
-Movelist& AtomicMoveRules::addLegalQueenMoves(Movelist& mvlist, Position& pos) {
-    const Colour co {pos.getSideToMove()};
-    Bitboard bbFrom {pos.getUnitsBb(co, QUEEN)};
-    const Bitboard bbFriendly {pos.getUnitsBb(co)};
-    const Bitboard bbAll {pos.getUnitsBb()};
-    while (bbFrom) {
-        Square fromSq {popLsb(bbFrom)};
-        Bitboard bbTo {(findBishopAttacks(fromSq, bbAll) | findRookAttacks(fromSq, bbAll)) & ~bbFriendly};
-        while (bbTo) {
-            Square toSq {popLsb(bbTo)};
-            if (pos.getMailbox(toSq) != NO_PIECE) {
-                if (isCaptureLegal(fromSq, toSq, pos)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            if (isConnectedKings(pos)) {
-                mvlist.push_back(buildMove(fromSq, toSq));
-                continue;
-            }
-            const Square kingSq {lsb(pos.getUnitsBb(co, KING))};
-            const Bitboard bbCheckers {attacksTo(kingSq, !co, pos)};
-            const Bitboard bbPinned {IMoveRules::findPinned(co, pos)};
-            if (bbCheckers) {
-                if (isInterpositionLegal(fromSq, toSq, pos)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
-                continue;
-            }
-            if (fromSq & bbPinned) {
-                if ((lineBetween[fromSq][kingSq] & toSq) || (lineBetween[toSq][kingSq] & fromSq)) {
-                    mvlist.push_back(buildMove(fromSq, toSq));
-                }
                 continue;
             }
             mvlist.push_back(buildMove(fromSq, toSq));

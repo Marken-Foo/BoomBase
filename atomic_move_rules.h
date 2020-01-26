@@ -29,15 +29,14 @@ class AtomicMoveRules : public IMoveRules {
     Movelist generateLegalMovesNaive(Position& pos);
     // add const-ness to Position& in these methods?
     Movelist& addLegalKingMoves(Movelist& mvlist, Position& pos);
-    Movelist& addLegalKnightMoves(Movelist& mvlist, Position& pos);
-    Movelist& addLegalBishopMoves(Movelist& mvlist, Position& pos);
-    Movelist& addLegalRookMoves(Movelist& mvlist, Position& pos);
-    Movelist& addLegalQueenMoves(Movelist& mvlist, Position& pos);
+    Movelist& addLegalKnightMoves(Movelist& mvlist, const Position& pos);
+    Movelist& addLegalSliderMoves(Movelist& mvlist, const Position& pos, PieceType pcty);
     Movelist& addLegalPawnMoves(Movelist& mvlist, Position& pos);
     
     Movelist& addLegalPawnCaptures(Movelist& mvlist, Position& pos);
     Movelist& addLegalPawnPushes(Movelist& mvlist, Position& pos);
     Movelist& addLegalPawnDoublePushes(Movelist& mvlist, Position& pos);
+    
     
     Movelist legalOnly(Position& pos);
     bool isCaptureLegal(Square fromSq, Square toSq, const Position& pos);

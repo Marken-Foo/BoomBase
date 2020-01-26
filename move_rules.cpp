@@ -104,15 +104,16 @@ Movelist& IMoveRules::addPawnMoves(Movelist& mvlist, Colour co,
             addPawnMoves(mvlist, co, fromSq, toSq);
         }
         // Generate single (and promotions) and double moves.
-        toSq = (co == WHITE) ? shiftN(fromSq) : shiftS(fromSq);
+        toSq = shiftForward(fromSq, co);
         if (!(toSq & bbAll)) {
             // Single moves (and promotions).
             addPawnMoves(mvlist, co, fromSq, toSq);
             // Double moves
             if (fromSq & BB_OUR_2[co]) {
-                toSq = (co == WHITE)
-                    ? shiftN(shiftN(fromSq))
-                    : shiftS(shiftS(fromSq));
+                toSq = shiftForward(shiftForward(fromSq, co), co);
+                //toSq = (co == WHITE)
+                  //  ? shiftN(shiftN(fromSq))
+                    //: shiftS(shiftS(fromSq));
                 if (!(toSq & bbAll)) {
                     mvlist.push_back(buildMove(fromSq, toSq));
                 }

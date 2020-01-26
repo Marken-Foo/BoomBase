@@ -102,6 +102,10 @@ inline Bitboard shiftNW(Bitboard bb) {return (bb << 7) & ~BB_H;}
 inline Bitboard shiftSE(Bitboard bb) {return (bb >> 7) & ~BB_A;}
 inline Bitboard shiftSW(Bitboard bb) {return (bb >> 9) & ~BB_H;}
 
+inline Bitboard shiftForward(Bitboard bb, Colour co) {
+    return co == WHITE ? shiftN(bb) : shiftS(bb);
+}
+
 // Test for singly-populated Bitboard
 inline bool isSingle(Bitboard bb) {
     return bb != BB_NONE && (bb & (bb - 1)) == BB_NONE;

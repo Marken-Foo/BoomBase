@@ -6,9 +6,6 @@
 #include "move.h"
 #include "position.h"
 
-#include <cstdint>
-#include <memory>
-
 
 Movelist& IMoveRules::addKingMoves(Movelist& mvlist, Colour co,
                                    const Position& pos) {

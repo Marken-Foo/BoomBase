@@ -6,8 +6,6 @@
 #include "chess_types.h"
 #include "move.h"
 
-#include <cstdint>
-#include <memory>
 
 class Position;
 

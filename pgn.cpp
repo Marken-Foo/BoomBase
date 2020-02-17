@@ -2,15 +2,15 @@
 #define PGN_INCLUDED
 
 #include <algorithm>
+#include <cctype>
 #include <iostream> //to refactor to unit test methods
+#include <iterator>
 #include <fstream>
 #include <string>
 
-// !!! MOST OF THIS CODE ASSUMES NO STRANGE ZERO-WIDTH CHARACTERS IN PGN !!!
-// ALSO LARGELY ASSUMES ASCII (stream content is 8-bit char)
 bool skipEscapedLines(std::istream& input);
 
-std::string PGN_WHITESPACE_CHARS {" \t\r"};
+std::string PGN_WHITESPACE_CHARS {" \t\r\n"};
 
 enum PgnToken {
     // symbols used
@@ -69,10 +69,14 @@ class ParserVisitor {
 };
 
 
+
 // Lexing??
 std::string readUntil(std::istream& input, char ch) {
     std::string str {};
     std::getline(input, str, ch);
+    if (ch == '\n') {
+        skipEscapedLines(input);
+    }
     return str;
 }
 
@@ -84,7 +88,7 @@ void skipWhitespace(std::istream& input) {
             skipEscapedLines(input);
             continue;
         }
-        if (PGN_WHITESPACE_CHARS.find(ch) == std::string::npos) {
+        if (!std::isspace(ch)) {
             input.unget();
             break;
         }
@@ -146,7 +150,7 @@ bool readMoveNumber(std::istream& input, ParserVisitor& parser) {
     // reads (and discards) move numbers.
     // eats all digits, eats whitespace, then eats all periods.
     char ch = input.get();
-    while (std::string{"0123456789"}.find(ch) != std::string::npos) {
+    while (std::isdigit(ch)) {
         ch = input.get();
     }
     input.unget();
@@ -168,15 +172,6 @@ bool readNag(std::istream& input, ParserVisitor& parser) {
         return false;
     }
     return parser.acceptNag(i);
-}
-
-bool readSan(std::istream& input, ParserVisitor& parser) {
-    std::string san {};
-    input >> san; // read until whitespace character, sanitisation deferred to parser
-    if (input.eof()) {
-        // ERROR: unexpected EOF (EOF while reading SAN move)
-    }
-    return parser.acceptSan(san);
 }
 
 bool readRavStart(std::istream& input, ParserVisitor& parser) {
@@ -242,7 +237,7 @@ bool readTagPair(std::istream& input, ParserVisitor& parser) {
     return parser.acceptTagPair(tagName, tagValue);
 }
 
-bool readTagSection(std::ifstream& input, ParserVisitor& parser) {
+bool readTagSection(std::istream& input, ParserVisitor& parser) {
     bool res {true};
     while (input.peek() == '[' & res) {
         res = readTagPair(input, parser);
@@ -250,47 +245,41 @@ bool readTagSection(std::ifstream& input, ParserVisitor& parser) {
     return res;
 }
 
-bool readMovetextToken(std::ifstream& input, ParserVisitor& parser) {
+bool readMovetextToken(std::istream& input, ParserVisitor& parser) {
     // can be either movenum, SAN (with !?), NAG, {}, RAV, or termination
     // or also ;, %
     // first identify obvious tokens
     char ch = input.peek();
     switch (ch) {
     case '(' :
-        readRavStart(input, parser);
-        return true;
+        return readRavStart(input, parser);
     case ')' :
-        readRavEnd(input, parser);
-        return true;
+        return readRavEnd(input, parser);
     case '{' :
-        readAccoladeComment(input, parser);
-        return true;
+        return readAccoladeComment(input, parser);
     case '*' :
-        readTerminationUnknown(input, parser);
-        return true;
+        return readTerminationUnknown(input, parser);
     case '$' :
-        readNag(input, parser);
-        return true;
+        return readNag(input, parser);
     case ';' :
-        readSemicolonComment(input, parser);
-        return true;
+        return readSemicolonComment(input, parser);
     case '!' : // intentional fallthrough
     case '?' :
-        readSuffix(input, parser);
-        return true;
+        return readSuffix(input, parser);
+    // case '[' :
+        // return readTagSection(input, parser);
     }
     
     // if not an obvious token, need to eat for SAN/movenum/termination.
     std::string token {};
     while (input) {
         ch = input.get();
-        if (ch == '?' || ch == '!') {
-            // hit move suffix
+        if (ch == '?' || ch == '!' || ch == '.') {
+            // hit move suffix or period
             input.unget();
             break;
         }
-        if (ch == '\n' || PGN_WHITESPACE_CHARS.find(ch) != std::string::npos) {
-            // hit whitespace
+        if (std::isspace(ch)) {
             input.unget();
             break;
         }
@@ -301,27 +290,24 @@ bool readMovetextToken(std::ifstream& input, ParserVisitor& parser) {
     }
     
     // if token does not begin with a number, assume it is SAN
-    if (std::string{"0123456789"}.find(token[0]) == std::string::npos) {
-        parser.acceptSan(token);
+    if (std::isalpha(token[0])) {
+        return parser.acceptSan(token);
     }
     
     // if token matches pgn game end, parse appropriate token.
     if (token == "1-0") {
-        parser.acceptResult(RESULT_WHITE);
-        return true;
+        return parser.acceptResult(RESULT_WHITE);
     } else if (token == "0-1") {
-        parser.acceptResult(RESULT_BLACK);
-        return true;
+        return parser.acceptResult(RESULT_BLACK);
     } else if (token == "1/2-1/2") {
-        parser.acceptResult(RESULT_DRAW);
-        return true;
+        return parser.acceptResult(RESULT_DRAW);
     }
     
-    // if token only contains digits, assume it is a movenumber
-    if (token.find_first_not_of("0123456789.") == std::string::npos) {
-        parser.acceptMoveNumber(token);
-        readMoveNumber(input, parser);
-        return true;
+    // if token only contains digits, assume movenumber, eat trailing periods
+    if (std::all_of(token.begin(), token.end(), ::isdigit)) {
+        readMoveNumber(input, parser); // cleanup
+        bool res = parser.acceptMoveNumber(token);
+        return res;
     }
     // something mysterious happened
     return parser.acceptUnknown(token);

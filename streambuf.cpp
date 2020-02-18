@@ -1,19 +1,34 @@
 #ifndef STREAMBUF_INCLUDED
 #define STREAMBUF_INCLUDED
 
+#include <algorithm>
 #include <cstring>
 #include <ios>
 #include <streambuf>
 
 class FileBuffer : public std::streambuf {
     private:
-    int bufferSize {16384}; // buffer size
+    int bufferSize {3}; // buffer size
     std::streambuf* source {nullptr};
     char* buffer {nullptr};
     
     public:
     // readWhile()
-    // readUntil()
+    template <typename Condition>
+    char* readUntil(char* cstr, Condition condition) {
+        auto it = std::find_if(eback(), egptr(), condition);
+        strncat(cstr, gptr(), it - gptr());
+        while (it == egptr()) {
+            // fully read buffer, underflow and check eof
+            if (underflow() == std::char_traits<char>::eof()) {
+                return cstr;
+            }
+            it = std::find_if(eback(), egptr(), condition);
+            strncat(cstr, eback(), it - eback());
+        }
+        setg(eback(), it, egptr());
+        return cstr;
+    }
     // gotoinFile()
     
     FileBuffer(std::streambuf* sbuf) 
@@ -27,7 +42,7 @@ class FileBuffer : public std::streambuf {
     protected:
     int_type underflow() override {
         std::streamsize read = source->sgetn(buffer, bufferSize);
-        if (!read) {
+        if (read == 0) {
             return std::char_traits<char>::eof();
         }
         setg(buffer, buffer, buffer + read);
@@ -54,6 +69,7 @@ class FileBuffer : public std::streambuf {
             strncat(s, gptr(), available);
             count -= available;
             read += available;
+            // fully read buffer, underflow and check eof.
             if (underflow() == std::char_traits<char>::eof()) {
                 // handles eof
                 return read;
@@ -67,6 +83,18 @@ class FileBuffer : public std::streambuf {
         return read;
     }
 };
+#include <iostream>
+class iFstream : public std::istream {
+    public:
+    ~iFstream() {
+        delete (this->rdbuf());
+    }
+};
+
+bool isg(char ch) {
+    // returns true if character is a lowercase g.
+    return (ch == 'b');
+}
 
 #include <fstream>
 #include "pgn.cpp"
@@ -81,12 +109,18 @@ int main() {
     std::ifstream file2 {"tests/pgn.pgn"};
     FileBuffer fbuf2 {file2.rdbuf()};
     std::istream inpgn {&fbuf2};
-    readTagSection(inpgn, parser);
-    while (inpgn) {
-        skipWhitespace(inpgn);
-        readMovetextToken(inpgn, parser);
-    }
-    return 0;
+    
+    std::cout << "HELLO\n";
+    
+    char out[450]{};
+    fbuf2.sgetc();
+    fbuf2.readUntil(out, isg);
+    std::cout << std::string{out};
+    // readTagSection(inpgn, parser);
+    // while (inpgn) {
+        // skipWhitespace(inpgn);
+        // readMovetextToken(inpgn, parser);
+    // }
     return 0;
 }
 

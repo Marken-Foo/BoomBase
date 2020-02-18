@@ -15,8 +15,6 @@ class FileBuffer : public std::streambuf {
     char* buffer {nullptr};
     
     public:
-    // gotoinFile(pos_type pos) {}
-    
     template <typename Condition>
     char* readUntil(char* cstr, Condition condition) {
         // leaves matching char as next char in buffer
@@ -102,12 +100,52 @@ class FileBuffer : public std::streambuf {
         setg(eback(), gptr() + count, egptr());
         return read;
     }
+    
+    pos_type seekoff(off_type off, std::ios_base::seekdir dir,
+                     std::ios_base::openmode which =
+                     std::ios_base::in | std::ios_base::out) override {
+        auto res {source->pubseekoff(off, dir, which)};
+        underflow();
+        return res;
+    }
+    
+    pos_type seekpos(pos_type pos, std::ios_base::openmode which =
+                     std::ios_base::in | std::ios_base::out) override {
+        auto res {source->pubseekpos(pos, which)};
+        underflow();
+        return res;
+    }
+    
+    int sync() override {
+        underflow();
+        return 0;
+    }
 };
 #include <iostream>
-class iFstream {
-    // wrapper for a std::ifstream
-    public:
+
+class Istream : public std::istream {
+    private:
+    FileBuffer* fbuf;
     
+    public:
+    Istream(FileBuffer* sbuf)
+        : std::istream(sbuf)
+        , fbuf(sbuf)
+    { }
+    
+    template <typename Condition>
+    std::string readUntil(Condition condition) {
+        char cstr[1] = "";
+        fbuf->readUntil(cstr, condition);
+        return std::string{cstr};
+    }
+    
+    template <typename Condition>
+    std::string readWhile(Condition condition) {
+        char cstr[1] = "";
+        fbuf->readWhile(cstr, condition);
+        return std::string{cstr};
+    }
 };
 
 bool isg(char ch) {

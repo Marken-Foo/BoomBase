@@ -6,30 +6,50 @@
 #include <ios>
 #include <streambuf>
 
+#include <iostream>
+
 class FileBuffer : public std::streambuf {
     private:
-    int bufferSize {3}; // buffer size
+    int bufferSize {16384}; // buffer size
     std::streambuf* source {nullptr};
     char* buffer {nullptr};
     
     public:
-    // readWhile()
+    // gotoinFile(pos_type pos) {}
+    
     template <typename Condition>
     char* readUntil(char* cstr, Condition condition) {
-        auto it = std::find_if(eback(), egptr(), condition);
+        // leaves matching char as next char in buffer
+        auto it = std::find_if(gptr(), egptr(), condition);
         strncat(cstr, gptr(), it - gptr());
         while (it == egptr()) {
             // fully read buffer, underflow and check eof
             if (underflow() == std::char_traits<char>::eof()) {
                 return cstr;
             }
-            it = std::find_if(eback(), egptr(), condition);
-            strncat(cstr, eback(), it - eback());
+            it = std::find_if(gptr(), egptr(), condition);
+            strncat(cstr, gptr(), it - gptr());
         }
         setg(eback(), it, egptr());
         return cstr;
     }
-    // gotoinFile()
+    
+    template <typename Condition>
+    char* readWhile(char* cstr, Condition condition) {
+        // reads all matching chars and leaves first nonmatching in buffer
+        auto it = std::find_if_not(gptr(), egptr(), condition);
+        strncat(cstr, gptr(), it - gptr());
+        while (it == egptr()) {
+            // fully read buffer, underflow and check eof
+            if (underflow() == std::char_traits<char>::eof()) {
+                return cstr;
+            }
+            it = std::find_if_not(gptr(), egptr(), condition);
+            strncat(cstr, gptr(), it - gptr());
+        }
+        setg(eback(), it, egptr());
+        return cstr;
+    }
     
     FileBuffer(std::streambuf* sbuf) 
         : source(sbuf), buffer(new char[bufferSize])
@@ -84,16 +104,15 @@ class FileBuffer : public std::streambuf {
     }
 };
 #include <iostream>
-class iFstream : public std::istream {
+class iFstream {
+    // wrapper for a std::ifstream
     public:
-    ~iFstream() {
-        delete (this->rdbuf());
-    }
+    
 };
 
 bool isg(char ch) {
     // returns true if character is a lowercase g.
-    return (ch == 'b');
+    return (ch == 'd');
 }
 
 #include <fstream>
@@ -112,9 +131,13 @@ int main() {
     
     std::cout << "HELLO\n";
     
-    char out[450]{};
-    fbuf2.sgetc();
+    char out[4500]{};
+    // fbuf2.sgetc();
     fbuf2.readUntil(out, isg);
+    std::cout << std::string{out};
+    std::cout << "\nWARGLEWARGLEWARGLE\n";
+    char wow[4500]{};
+    fbuf2.readUntil(out, [](char ch){return (ch == 's');});
     std::cout << std::string{out};
     // readTagSection(inpgn, parser);
     // while (inpgn) {

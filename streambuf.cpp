@@ -62,12 +62,23 @@ class FileBuffer : public std::streambuf {
     }
     
     protected:
-    int_type underflow() override {
+    /* int_type underflow() override {
         std::streamsize read = source->sgetn(buffer, bufferSize);
         if (read == 0) {
             return std::char_traits<char>::eof();
         }
         setg(buffer, buffer, buffer + read);
+        return *gptr();
+    } */
+    
+    int_type underflow() override {
+        // attempts to move buffer window forward by bufferSize - 1 chars.
+        buffer[0] = buffer[bufferSize - 1];
+        std::streamsize read = source->sgetn(buffer+1, bufferSize-1);
+        if (read == 0) {
+            return std::char_traits<char>::eof();
+        }
+        setg(buffer, buffer + 1, buffer + 1 + read);
         return *gptr();
     }
     
@@ -79,9 +90,14 @@ class FileBuffer : public std::streambuf {
             return ch;
         } else {
             // if called with no args, there is no putback position in get area. Should back up one char if allowed.
-            // (??)
+            if (seekoff(-1, std::ios_base::cur, std::ios_base::in) == pos_type(off_type(-1))) {
+                // failed to back up (start of file)
+                return std::char_traits<char>::eof();
+            } else {
+                *gptr() = ch;
+                return ch;
+            }
         }
-        return std::char_traits<char>::eof();
     }
     
     std::streamsize xsgetn(char* s, std::streamsize count) override {
@@ -168,7 +184,6 @@ int main() {
     Istream inpgn {&fbuf2};
     
     std::cout << "HELLO\n";
-    
     std::string yaya {inpgn.readUntil([](char ch){return (ch == 'Q');})};
     std::cout << yaya << "haha";
     VecBuf vb;

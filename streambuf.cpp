@@ -5,10 +5,14 @@
 #include <cstring>
 #include <ios>
 #include <streambuf>
+#include <vector>
 
 #include <iostream>
 
+typedef std::vector<char> VecBuf;
+
 class FileBuffer : public std::streambuf {
+    // Extension of std::streambuf to include readWhile/readUntil methods
     private:
     int bufferSize {16384}; // buffer size
     std::streambuf* source {nullptr};
@@ -16,37 +20,37 @@ class FileBuffer : public std::streambuf {
     
     public:
     template <typename Condition>
-    char* readUntil(char* cstr, Condition condition) {
+    VecBuf& readUntil(VecBuf& vec, Condition condition) {
         // leaves matching char as next char in buffer
         auto it = std::find_if(gptr(), egptr(), condition);
-        strncat(cstr, gptr(), it - gptr());
+        vec.insert(vec.end(), gptr(), it);
         while (it == egptr()) {
             // fully read buffer, underflow and check eof
             if (underflow() == std::char_traits<char>::eof()) {
-                return cstr;
+                return vec;
             }
             it = std::find_if(gptr(), egptr(), condition);
-            strncat(cstr, gptr(), it - gptr());
+            vec.insert(vec.end(), gptr(), it);
         }
         setg(eback(), it, egptr());
-        return cstr;
+        return vec;
     }
     
     template <typename Condition>
-    char* readWhile(char* cstr, Condition condition) {
+    VecBuf& readWhile(VecBuf& vec, Condition condition) {
         // reads all matching chars and leaves first nonmatching in buffer
         auto it = std::find_if_not(gptr(), egptr(), condition);
-        strncat(cstr, gptr(), it - gptr());
+        vec.insert(vec.end(), gptr, it);
         while (it == egptr()) {
             // fully read buffer, underflow and check eof
             if (underflow() == std::char_traits<char>::eof()) {
-                return cstr;
+                return vec;
             }
             it = std::find_if_not(gptr(), egptr(), condition);
-            strncat(cstr, gptr(), it - gptr());
+            vec.insert(vec.end(), gptr(), it);
         }
         setg(eback(), it, egptr());
-        return cstr;
+        return vec;
     }
     
     FileBuffer(std::streambuf* sbuf) 
@@ -121,10 +125,10 @@ class FileBuffer : public std::streambuf {
         return 0;
     }
 };
-#include <iostream>
 
 class Istream : public std::istream {
-    private:
+    // Custom istream to access readWhile/readUntil methods of FileBuffer
+    public:
     FileBuffer* fbuf;
     
     public:
@@ -135,23 +139,19 @@ class Istream : public std::istream {
     
     template <typename Condition>
     std::string readUntil(Condition condition) {
-        char cstr[1] = "";
-        fbuf->readUntil(cstr, condition);
-        return std::string{cstr};
+        VecBuf vecbuf {};
+        fbuf->readUntil(vecbuf, condition);
+        return std::string{vecbuf.begin(), vecbuf.end()};
     }
     
     template <typename Condition>
     std::string readWhile(Condition condition) {
-        char cstr[1] = "";
-        fbuf->readWhile(cstr, condition);
-        return std::string{cstr};
+        VecBuf vecbuf {};
+        fbuf->readWhile(vecbuf, condition);
+        return std::string{vecbuf.begin(), vecbuf.end()};
     }
 };
 
-bool isg(char ch) {
-    // returns true if character is a lowercase g.
-    return (ch == 'd');
-}
 
 #include <fstream>
 #include "pgn.cpp"
@@ -165,18 +165,19 @@ int main() {
     
     std::ifstream file2 {"tests/pgn.pgn"};
     FileBuffer fbuf2 {file2.rdbuf()};
-    std::istream inpgn {&fbuf2};
+    Istream inpgn {&fbuf2};
     
     std::cout << "HELLO\n";
     
-    char out[4500]{};
-    // fbuf2.sgetc();
-    fbuf2.readUntil(out, isg);
-    std::cout << std::string{out};
-    std::cout << "\nWARGLEWARGLEWARGLE\n";
-    char wow[4500]{};
-    fbuf2.readUntil(out, [](char ch){return (ch == 's');});
-    std::cout << std::string{out};
+    std::string yaya {inpgn.readUntil([](char ch){return (ch == 'Q');})};
+    std::cout << yaya << "haha";
+    VecBuf vb;
+    inpgn.fbuf->readUntil(vb, [](char ch){return (ch == 's');});
+    std::string yoyo(vb.begin(), vb.end());
+    std::cout << yoyo << "hoho";
+    
+    // std::cout << "\nWARGLEWARGLEWARGLE\n";
+    
     // readTagSection(inpgn, parser);
     // while (inpgn) {
         // skipWhitespace(inpgn);

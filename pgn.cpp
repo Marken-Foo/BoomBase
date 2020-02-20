@@ -3,72 +3,16 @@
 
 #include <algorithm>
 #include <cctype>
+#include <fstream>
 #include <iostream> //to refactor to unit test methods
 #include <iterator>
-#include <fstream>
 #include <string>
+
+#include "pgn_visitors.h"
 
 bool skipEscapedLines(std::istream& input);
 
-std::string PGN_WHITESPACE_CHARS {" \t\r\n"};
-
-enum PgnToken {
-    // symbols used
-    RESULT_WHITE, RESULT_BLACK, RESULT_DRAW, RESULT_UNKNOWN
-};
-
-
-class ParserVisitor {
-    // this is currently printing parser for debugging
-    public:
-    // need variadic template to set optional args.
-    bool accept(PgnToken tok) {
-        std::cout << tok;
-        return true;
-    }
-    bool acceptTagPair(std::string tagName, std::string tagValue) {
-        std::cout << "Tag name: <" << tagName << ">, tag value: <" << tagValue << ">\n";
-        return true;
-    }
-    bool acceptComment(std::string comment) {
-        std::cout << "Comment: \"" << comment << "\"" << "\n";
-        return true;
-    }
-    bool acceptNag(int i) {
-        std::cout << "Nag: \"" << std::to_string(i) << "\"" << "\n";
-        return true;
-    }
-    bool acceptSan(std::string san) {
-        std::cout << san << " ";
-        return true;
-    }
-    bool acceptSuffix(std::string suffix) {
-        std::cout << suffix << " ";
-        return true;
-    }
-    bool acceptRavStart() {
-        // Needs to go into RAV mode, back one step and make a new variation.
-        return true;
-    }
-    bool acceptRavEnd() {
-        // Needs to exit RAV mode, back to most recent branch point where current variation is not mainline.
-        return true;
-    }
-    bool acceptResult(PgnToken tok) {
-        std::cout << "Result: " << std::to_string(tok) << "\n";
-        return true;
-    }
-    bool acceptMoveNumber(std::string movenum) {
-        std::cout << "Movenum: " << movenum << " ";
-        return true;
-    }
-    bool acceptUnknown(std::string token) {
-        std::cout << "Unknown: " << token << " ";
-        return false;
-    }
-};
-
-
+const std::string PGN_WHITESPACE_CHARS {" \t\r\n"};
 
 // Lexing??
 std::string readUntil(std::istream& input, char ch) {
@@ -77,6 +21,20 @@ std::string readUntil(std::istream& input, char ch) {
     if (ch == '\n') {
         skipEscapedLines(input);
     }
+    return str;
+}
+
+std::string readUntil(std::istream& input, std::string delims) {
+    std::string str {};
+    char ch = input.get();
+    if (!input) {
+        return str;
+    }
+    while (delims.find(ch) == std::string::npos) {
+        str.append(1, ch);
+        ch = input.get();
+    }
+    input.unget();
     return str;
 }
 
@@ -250,7 +208,13 @@ bool readMovetextToken(std::istream& input, ParserVisitor& parser) {
     // or also ;, %
     // first identify obvious tokens
     char ch = input.peek();
+    if (input.eof()) {
+        return false;
+    }
     switch (ch) {
+    case '[' :
+        // previous game ended, new game begins
+        return false;
     case '(' :
         return readRavStart(input, parser);
     case ')' :
@@ -266,8 +230,8 @@ bool readMovetextToken(std::istream& input, ParserVisitor& parser) {
     case '!' : // intentional fallthrough
     case '?' :
         return readSuffix(input, parser);
-    // case '[' :
-        // return readTagSection(input, parser);
+    default:
+        break;
     }
     
     // if not an obvious token, need to eat for SAN/movenum/termination.
@@ -290,7 +254,7 @@ bool readMovetextToken(std::istream& input, ParserVisitor& parser) {
     }
     
     // if token does not begin with a number, assume it is SAN
-    if (std::isalpha(token[0])) {
+    if (::isalpha(token[0])) {
         return parser.acceptSan(token);
     }
     
@@ -312,12 +276,13 @@ bool readMovetextToken(std::istream& input, ParserVisitor& parser) {
     // something mysterious happened
     return parser.acceptUnknown(token);
 }
-
+/* 
 
 int main() {
     ParserVisitor parser;
-    std::ifstream input {"tests/pgn_tests.txt"};
-    readTagSection(input, parser);
+    std::ifstream file {"tests/pgn_tests.txt"};
+    
+    readTagSection(file, parser);
     
     std::cout << "Now looking at pgn\n";
     std::ifstream inpgn {"tests/pgn.pgn"};
@@ -329,5 +294,5 @@ int main() {
     return 0;
 }
 
-
+ */
 #endif //#ifndef PGN_INCLUDED

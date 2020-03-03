@@ -147,19 +147,17 @@ class Istream : public std::istream {
     { }
     
     template <typename Condition>
-    std::string readUntil(Condition condition) {
+    VecBuf readUntil(Condition condition) {
         VecBuf vecbuf {};
         fbuf->readUntil(vecbuf, condition);
-        RawToken rt = std::make_pair(vecbuf.begin(), vecbuf.end());
-        return std::string(rt.first, rt.second);
+        return vecbuf;
     }
     
     template <typename Condition>
-    std::string readWhile(Condition condition) {
+    VecBuf readWhile(Condition condition) {
         VecBuf vecbuf {};
         fbuf->readWhile(vecbuf, condition);
-        RawToken rt = std::make_pair(vecbuf.begin(), vecbuf.end());
-        return std::string(rt.first, rt.second);
+        return vecbuf;
     }
 };
 

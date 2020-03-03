@@ -38,7 +38,7 @@ const IsOneOf isIdentifierEnd{PGN_WHITESPACE + "\""};
 const IsOneOf isTokenEnd{PGN_WHITESPACE + ".?!"};
 
 void skipWhitespace(Istream& input, PgnVisitor& parser) {
-    while (input.readWhile(IsOneOf{" \r\t\v"}) != "") {
+    while (input.readWhile(IsOneOf{" \r\t\v"}).size() != 0) {
         if (input.peek() == '\n') {
             input.get();
             parser.acceptNewline();
@@ -101,27 +101,29 @@ bool readTagPair(Istream& input, PgnVisitor& parser) {
     skipToToken(input, parser);
     
     // read tag name
-    std::string tagName {input.readUntil(isIdentifierEnd)};
+    VecBuf tagName {input.readUntil(isIdentifierEnd)};
     skipToToken(input, parser);
     
     // read tag value (enclosed in double quotes)
     if (input.get() != '"') {
         return false; // expected opening double quote
     }
-    std::string tagValue {};
+    VecBuf tagValue {};
     char ch {};
     while (ch != '"' && input) {
         // read until closing double quote, while correctly reading escaped backslashes/double quotes.
-        tagValue.append(input.readUntil(IsOneOf{"\"\\"})); // is double quote or backslash
+        VecBuf partial {input.readUntil(IsOneOf{"\"\\"})};
+        tagValue.insert(tagValue.end(), partial.begin(), partial.end()); // is double quote or backslash
         ch = input.get();
         if (ch == '"') {break;}
         else if (ch == '\\') {
             char escaped = input.get();
             if (!input) {break;}
             else if (escaped != '\\' && escaped != '"') {
-                tagValue.append("\\");
+                tagValue.push_back('\'');
+                tagValue.push_back('\'');
             }
-            tagValue.append(1, escaped);
+            tagValue.push_back(escaped);
         }
     }
     // ensure tag pair is closed with ']'
@@ -151,7 +153,7 @@ bool readToken(Istream& input, PgnVisitor& parser) {
     case ')' :
         return parser.acceptRavEnd();
     case '{' : {
-        std::string comment {input.readUntil([](char c){return c == '}';})};
+        VecBuf comment {input.readUntil([](char c){return c == '}';})};
         if (input.get() == '}') {
             return parser.acceptComment(comment);
         } else {
@@ -161,7 +163,7 @@ bool readToken(Istream& input, PgnVisitor& parser) {
     case '*' :
         return parser.acceptResult(RESULT_UNKNOWN);
     case '$' : {
-        int nag = std::stoi(input.readWhile(::isdigit));
+        auto nag = input.readWhile(::isdigit);
         return parser.acceptNag(nag);
     }
     case '%' :
@@ -176,19 +178,10 @@ bool readToken(Istream& input, PgnVisitor& parser) {
     }
     // if next token is not obvious from the first character alone, we need to grab it and check its type.
     input.unget();
-    std::string token = input.readUntil(isTokenEnd);
+    VecBuf token = input.readUntil(isTokenEnd);
     // if token does not begin with a number, assume it is SAN
     if (::isalpha(token[0])) {
         return parser.acceptSan(token);
-    }
-    
-    // if token matches pgn game end, parse appropriate token.
-    if (token == "1-0") {
-        return parser.acceptResult(RESULT_WHITE);
-    } else if (token == "0-1") {
-        return parser.acceptResult(RESULT_BLACK);
-    } else if (token == "1/2-1/2") {
-        return parser.acceptResult(RESULT_DRAW);
     }
     
     // if token only contains digits, assume movenumber, eat trailing periods
@@ -198,6 +191,16 @@ bool readToken(Istream& input, PgnVisitor& parser) {
         skipWhitespace(input, parser);
         input.readWhile([](char ch){return ch == '.';});
         return res;
+    }
+    
+    // if token matches pgn game end, parse appropriate token.
+    std::string stok(token.begin(), token.end());
+    if (stok == "1-0") {
+        return parser.acceptResult(RESULT_WHITE);
+    } else if (stok == "0-1") {
+        return parser.acceptResult(RESULT_BLACK);
+    } else if (stok == "1/2-1/2") {
+        return parser.acceptResult(RESULT_DRAW);
     }
     
     // something mysterious happened

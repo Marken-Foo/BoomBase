@@ -13,22 +13,22 @@ class PgnVisitor {
     // Default is a "do nothing" visitor. Useful for benchmarking or skipping.
     // TODO: it should also track whether a PGN game is over or not?
     public:
-    virtual bool acceptTagPair(std::string tagName, std::string tagValue) {
+    virtual bool acceptTagPair(std::vector<char> tagName, std::vector<char> tagValue) {
         return true;
     }
-    virtual bool acceptComment(std::string comment) {return true;}
-    virtual bool acceptNag(int i) {return true;}
-    virtual bool acceptSan(std::string san) {return true;}
-    virtual bool acceptSuffix(std::string suffix) {return true;}
+    virtual bool acceptComment(std::vector<char> comment) {return true;}
+    virtual bool acceptNag(std::vector<char> i) {return true;}
+    virtual bool acceptSan(std::vector<char> san) {return true;}
+    virtual bool acceptSuffix(std::vector<char> suffix) {return true;}
     virtual bool acceptRavStart() {return true;}
     virtual bool acceptRavEnd() {return true;}
     virtual bool acceptResult(PgnToken tok) {return true;}
-    virtual bool acceptMoveNumber(std::string movenum) {return true;}
-    virtual bool acceptUnknown(std::string token) {return false;}
+    virtual bool acceptMoveNumber(std::vector<char> movenum) {return true;}
+    virtual bool acceptUnknown(std::vector<char> token) {return false;}
     virtual bool acceptNewline() {return true;}
 };
 
-
+/* 
 class PrinterPgnVisitor : public PgnVisitor {
     // Prints all information received to standard output. Useful for debugging.
     public:
@@ -79,7 +79,7 @@ class PrinterPgnVisitor : public PgnVisitor {
         return true;
     }
 };
-
+ */
 
 class GameBuilderPgnVisitor {};
 

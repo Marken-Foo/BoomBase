@@ -4,14 +4,14 @@
 #include <algorithm>
 #include <cstring>
 #include <ios>
+#include <istream>
 #include <streambuf>
 #include <vector>
 
-#include <iostream>
+using VecBuf = std::vector<char>;
+using RawToken = std::pair<VecBuf::iterator, VecBuf::iterator>;
 
-typedef std::vector<char> VecBuf;
-
-class FileBuffer : public std::streambuf {
+class StreamBuffer : public std::streambuf {
     // Extension of std::streambuf to include readWhile/readUntil methods
     private:
     int bufferSize {16384}; // buffer size
@@ -25,7 +25,7 @@ class FileBuffer : public std::streambuf {
         auto it = std::find_if(gptr(), egptr(), condition);
         vec.insert(vec.end(), gptr(), it);
         while (it == egptr()) {
-            // fully read buffer, underflow and check eof
+            // buffer has been fully read; underflow and check eof
             if (underflow() == std::char_traits<char>::eof()) {
                 setg(eback(), it, egptr());
                 return vec;
@@ -43,7 +43,7 @@ class FileBuffer : public std::streambuf {
         auto it = std::find_if_not(gptr(), egptr(), condition);
         vec.insert(vec.end(), gptr(), it);
         while (it == egptr()) {
-            // fully read buffer, underflow and check eof
+            // buffer has been fully read; underflow and check eof
             if (underflow() == std::char_traits<char>::eof()) {
                 setg(eback(), it, egptr());
                 return vec;
@@ -55,24 +55,15 @@ class FileBuffer : public std::streambuf {
         return vec;
     }
     
-    FileBuffer(std::streambuf* sbuf) 
+    StreamBuffer(std::streambuf* sbuf) 
         : source(sbuf), buffer(new char[bufferSize])
     { }
     
-    ~FileBuffer() override {
+    ~StreamBuffer() override {
         delete[] buffer;
     }
     
-    protected:
-    /* int_type underflow() override {
-        std::streamsize read = source->sgetn(buffer, bufferSize);
-        if (read == 0) {
-            return std::char_traits<char>::eof();
-        }
-        setg(buffer, buffer, buffer + read);
-        return *gptr();
-    } */
-    
+    protected:    
     int_type underflow() override {
         // attempts to move buffer window forward by bufferSize - 1 chars.
         buffer[0] = buffer[bufferSize - 1];
@@ -145,12 +136,12 @@ class FileBuffer : public std::streambuf {
 };
 
 class Istream : public std::istream {
-    // Custom istream to access readWhile/readUntil methods of FileBuffer
+    // Custom istream to access readWhile/readUntil methods of StreamBuffer
     public:
-    FileBuffer* fbuf;
+    StreamBuffer* fbuf;
     
     public:
-    Istream(FileBuffer* sbuf)
+    Istream(StreamBuffer* sbuf)
         : std::istream(sbuf)
         , fbuf(sbuf)
     { }
@@ -159,46 +150,17 @@ class Istream : public std::istream {
     std::string readUntil(Condition condition) {
         VecBuf vecbuf {};
         fbuf->readUntil(vecbuf, condition);
-        return std::string{vecbuf.begin(), vecbuf.end()};
+        RawToken rt = std::make_pair(vecbuf.begin(), vecbuf.end());
+        return std::string(rt.first, rt.second);
     }
     
     template <typename Condition>
     std::string readWhile(Condition condition) {
         VecBuf vecbuf {};
         fbuf->readWhile(vecbuf, condition);
-        return std::string{vecbuf.begin(), vecbuf.end()};
+        RawToken rt = std::make_pair(vecbuf.begin(), vecbuf.end());
+        return std::string(rt.first, rt.second);
     }
 };
-
-
-#include <fstream>
-#include "pgn.cpp"
-/* int main() {
-    // std::ifstream file {"tests/pgn_tests.txt"};
-    // FileBuffer fbuf {file.rdbuf()};
-    // std::istream infbuf {&fbuf};
-    
-    // ParserVisitor parser;
-    // readTagSection(infbuf, parser);
-    
-    std::ifstream file2 {"tests/pgn.pgn"};
-    FileBuffer fbuf2 {file2.rdbuf()};
-    Istream inpgn {&fbuf2};
-    
-    std::cout << "HELLO\n";
-    std::string yaya {inpgn.readUntil([](char ch){return (ch == 'Q');})};
-    std::cout << yaya << "haha";
-    std::string yoyo {inpgn.readUntil([](char ch){return (ch == 'K');})};
-    std::cout << yoyo << "hoho";
-    
-    // std::cout << "\nWARGLEWARGLEWARGLE\n";
-    
-    // readTagSection(inpgn, parser);
-    // while (inpgn) {
-        // skipWhitespace(inpgn);
-        // readMovetextToken(inpgn, parser);
-    // }
-    return 0;
-} */
 
 #endif //#ifndef STREAMBUF_INCLUDED

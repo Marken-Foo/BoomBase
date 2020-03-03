@@ -9,61 +9,78 @@ enum PgnToken {
     RESULT_WHITE, RESULT_BLACK, RESULT_DRAW, RESULT_UNKNOWN
 };
 
-class ParserVisitor {
-    // TODO: turn into base class from which we inherit several parser types
-    // default should be DoNothingVisitor (i.e. SkipVisitor)
-    // it should also track whether a PGN game is over or not?
-    // this is currently printing parser for debugging
+class PgnVisitor {
+    // Default is a "do nothing" visitor. Useful for benchmarking or skipping.
+    // TODO: it should also track whether a PGN game is over or not?
     public:
-    // need variadic template to set optional args.
-    virtual bool accept(PgnToken tok) {
-        std::cout << tok;
+    virtual bool acceptTagPair(std::string tagName, std::string tagValue) {
         return true;
     }
-    virtual bool acceptTagPair(std::string tagName, std::string tagValue) {
+    virtual bool acceptComment(std::string comment) {return true;}
+    virtual bool acceptNag(int i) {return true;}
+    virtual bool acceptSan(std::string san) {return true;}
+    virtual bool acceptSuffix(std::string suffix) {return true;}
+    virtual bool acceptRavStart() {return true;}
+    virtual bool acceptRavEnd() {return true;}
+    virtual bool acceptResult(PgnToken tok) {return true;}
+    virtual bool acceptMoveNumber(std::string movenum) {return true;}
+    virtual bool acceptUnknown(std::string token) {return false;}
+    virtual bool acceptNewline() {return true;}
+};
+
+
+class PrinterPgnVisitor : public PgnVisitor {
+    // Prints all information received to standard output. Useful for debugging.
+    public:
+    bool acceptTagPair(std::string tagName, std::string tagValue) override {
         std::cout << "Tag name: <" << tagName << ">, tag value: <" << tagValue << ">\n";
         return true;
     }
-    virtual bool acceptComment(std::string comment) {
-        std::cout << "Comment: \"" << comment << "\"" << "\n";
+    bool acceptComment(std::string comment) override {
+        std::cout << "Comment: <" << comment << ">" << "\n";
         return true;
     }
-    virtual bool acceptNag(int i) {
+    bool acceptNag(int i) override {
         std::cout << "Nag: \"" << std::to_string(i) << "\"" << "\n";
         return true;
     }
-    virtual bool acceptSan(std::string san) {
+    bool acceptSan(std::string san) override {
         std::cout << san << " ";
         return true;
     }
-    virtual bool acceptSuffix(std::string suffix) {
+    bool acceptSuffix(std::string suffix) override {
         std::cout << suffix << " ";
         return true;
     }
-    virtual bool acceptRavStart() {
+    bool acceptRavStart() override {
         // Needs to go into RAV mode, back one step and make a new variation.
+        std::cout << "(enter RAV) ";
         return true;
     }
-    virtual bool acceptRavEnd() {
+    bool acceptRavEnd() override {
         // Needs to exit RAV mode, back to most recent branch point where current variation is not mainline.
+        std::cout << "(exit RAV) ";
         return true;
     }
-    virtual bool acceptResult(PgnToken tok) {
+    bool acceptResult(PgnToken tok) override {
         std::cout << "Result: " << std::to_string(tok) << "\n";
         return true;
     }
-    virtual bool acceptMoveNumber(std::string movenum) {
-        std::cout << "Movenum: " << movenum << " ";
+    bool acceptMoveNumber(std::string movenum) override {
+        std::cout << "Mv#:" << movenum << " ";
         return true;
     }
-    virtual bool acceptUnknown(std::string token) {
+    bool acceptUnknown(std::string token) override {
         std::cout << "Unknown: " << token << " ";
         return false;
     }
-    virtual bool acceptNewline() {
+    bool acceptNewline() override {
         std::cout << "Newline\n";
         return true;
     }
 };
+
+
+class GameBuilderPgnVisitor {};
 
 #endif //#ifndef PARSER_VISITORS_INCLUDED

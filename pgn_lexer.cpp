@@ -8,13 +8,15 @@
 
 #include "pgn_visitors.h"
 #include "streambuf.cpp"
+// #include "filebuf.cpp"
 
 // testing
+#include <chrono>
 #include <fstream>
 #include <iostream>
 
-bool readEscape(Istream& input, ParserVisitor& parser);
-bool readLineComment(Istream& input, ParserVisitor& parser);
+bool readEscape(Istream& input, PgnVisitor& parser);
+bool readLineComment(Istream& input, PgnVisitor& parser);
 
 
 class IsOneOf {
@@ -32,13 +34,11 @@ class IsOneOf {
 };
 
 const std::string PGN_WHITESPACE {" \n\r\t\v"};
-const IsOneOf isWhitespace{PGN_WHITESPACE};
 const IsOneOf isIdentifierEnd{PGN_WHITESPACE + "\""};
 const IsOneOf isTokenEnd{PGN_WHITESPACE + ".?!"};
 
-
-void skipWhitespace(Istream& input, ParserVisitor& parser) {
-    while (input.readWhile(IsOneOf{" \r\t\v"}) != ""); {
+void skipWhitespace(Istream& input, PgnVisitor& parser) {
+    while (input.readWhile(IsOneOf{" \r\t\v"}) != "") {
         if (input.peek() == '\n') {
             input.get();
             parser.acceptNewline();
@@ -47,7 +47,7 @@ void skipWhitespace(Istream& input, ParserVisitor& parser) {
     return;
 }
 
-bool skipToToken(Istream& input, ParserVisitor& parser) {
+bool skipToToken(Istream& input, PgnVisitor& parser) {
     // skips to next token, while handling whitespace, '%' escape, and semicolon comments
     skipWhitespace(input, parser);
     char ch {};
@@ -70,7 +70,7 @@ bool skipToToken(Istream& input, ParserVisitor& parser) {
     return true;
 }
 
-bool readEscape(Istream& input, ParserVisitor& parser) {
+bool readEscape(Istream& input, PgnVisitor& parser) {
     // entry point: just read a '%' character
     input.unget(); // unconsumes '%'
     input.unget(); // attempts to unconsume again
@@ -89,13 +89,13 @@ bool readEscape(Istream& input, ParserVisitor& parser) {
     }
 }
 
-bool readLineComment(Istream& input, ParserVisitor& parser) {
+bool readLineComment(Istream& input, PgnVisitor& parser) {
     // entry point: just read a ';' character
     input.readUntil([](char ch){return ch == '\n';});
     return true;
 }
 
-bool readTagPair(Istream& input, ParserVisitor& parser) {
+bool readTagPair(Istream& input, PgnVisitor& parser) {
     // entry point: just read a '[' character
     // Now skip whitespace while handling escapes and semicolon comments
     skipToToken(input, parser);
@@ -134,7 +134,7 @@ bool readTagPair(Istream& input, ParserVisitor& parser) {
 }
 
 // Rely on parser to catch grammar errors, here we just lex and delegate.
-bool readToken(Istream& input, ParserVisitor& parser) {
+bool readToken(Istream& input, PgnVisitor& parser) {
     skipWhitespace(input, parser);
     char ch = input.get();
     if (input.eof()) {
@@ -168,13 +168,12 @@ bool readToken(Istream& input, ParserVisitor& parser) {
         return readEscape(input, parser);
     case ';' :
         return readLineComment(input, parser);
-    case '?' : //intentional fallthrough
+    case '?' : //intentional fallthrough, '?' and '!' are treated the same
     case '!' :
         return parser.acceptSuffix(input.readWhile([](char c){return c == '?' || c == '!';}));
     default :
         break;
     }
-    
     // if next token is not obvious from the first character alone, we need to grab it and check its type.
     input.unget();
     std::string token = input.readUntil(isTokenEnd);
@@ -196,7 +195,7 @@ bool readToken(Istream& input, ParserVisitor& parser) {
     if (std::all_of(token.begin(), token.end(), ::isdigit)) {
         bool res = parser.acceptMoveNumber(token);
         // cleanup
-        input.readWhile(isWhitespace);
+        skipWhitespace(input, parser);
         input.readWhile([](char ch){return ch == '.';});
         return res;
     }
@@ -205,15 +204,22 @@ bool readToken(Istream& input, ParserVisitor& parser) {
     return parser.acceptUnknown(token);
 }
 
+
 int main() {
-    ParserVisitor parser;
-    std::ifstream infile {"tests/pgn.pgn"};
-    FileBuffer fbuf = infile.rdbuf();
+    PgnVisitor parser;
+    std::ifstream infile {"tests/fics2008.pgn"};
+    StreamBuffer fbuf = infile.rdbuf();
     Istream inpgn {&fbuf};
     
+    auto timeStart = std::chrono::steady_clock::now();
     while (readToken(inpgn, parser)) {
         if (!inpgn) {break;}
     }
+    auto timeEnd = std::chrono::steady_clock::now();
+    auto timeTaken = timeEnd - timeStart;
+    std::cout << std::chrono::duration<double, std::milli>(timeTaken).count()
+              << " ms\n";
+    std::cout << "Done! DONE!";
     return 0;
 }
 

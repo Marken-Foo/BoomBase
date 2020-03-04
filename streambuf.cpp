@@ -6,10 +6,8 @@
 #include <ios>
 #include <istream>
 #include <streambuf>
-#include <vector>
 
-using VecBuf = std::vector<char>;
-using RawToken = std::pair<VecBuf::iterator, VecBuf::iterator>;
+using RawToken = std::pair<char*, char*>;
 
 class StreamBuffer : public std::streambuf {
     // Extension of std::streambuf to include readWhile/readUntil methods
@@ -18,41 +16,59 @@ class StreamBuffer : public std::streambuf {
     std::streambuf* source {nullptr};
     char* buffer {nullptr};
     
+    // TODO: modify readUntil() and readWhile() to return pointers to the internal char* buffer. Upon reaching egptr, underflow() once, retaining egptr() - it characters (so write a private underflow(int i) method to do so) and find again. If std::find returns egptr() again without eof, then report buffer overflow (check if missing closing paren/accolade/brace etc).
+    // Or instead of reporting buffer overflow, instead just continue, but silently return wrong pointers.
+    // Note also that returned pointers are valid but incorrect if the buffer position (w.r.t. source) changes.
+    
+    // Basically, assumes that readUntil() and readWhile() will only be used to read things (tokens) that are shorter than bufferSize. (Nobody puts 32kB of raw text into a single PGN comment, right?) So returned pointers are valid only if "actual" token length < bufferSize, and valid only while the buffer position does not change.
+    
     public:
     template <typename Condition>
-    VecBuf& readUntil(VecBuf& vec, Condition condition) {
-        // leaves matching char as next char in buffer
+    RawToken readUntil(Condition condition) {
+        // Reads all nonmatching chars and leaves first matching in buffer.
+        // Returns pointers to [start, end) of read characters.
+        // Will only read characters up to bufferSize, returns a pair of
+        // nullptr if attempting to read more than bufferSize chars.
         auto it = std::find_if(gptr(), egptr(), condition);
-        vec.insert(vec.end(), gptr(), it);
-        while (it == egptr()) {
-            // buffer has been fully read; underflow and check eof
-            if (underflow() == std::char_traits<char>::eof()) {
-                setg(eback(), it, egptr());
-                return vec;
+        if (it == egptr()) {
+            if (underflow(egptr() - gptr()) == std::char_traits<char>::eof()) {
+                setg(eback(), egptr(), egptr());
+                return RawToken(eback(), egptr());
             }
-            it = std::find_if(gptr(), egptr(), condition);
-            vec.insert(vec.end(), gptr(), it);
+            it = std::find_if(eback(), egptr(), condition);
+            if (it == egptr()) {
+                setg(eback(), eback(), egptr());
+                return RawToken(nullptr, nullptr);
+            }
+        } else {
+            RawToken res(gptr(), it);
+            setg(eback(), it, egptr());
+            return res;
         }
-        setg(eback(), it, egptr());
-        return vec;
     }
     
     template <typename Condition>
-    VecBuf& readWhile(VecBuf& vec, Condition condition) {
-        // reads all matching chars and leaves first nonmatching in buffer
+    RawToken readWhile(Condition condition) {
+        // Reads all matching chars and leaves first nonmatching in buffer.
+        // Returns pointers to [start, end) of read characters.
+        // Will only read characters up to bufferSize, returns a pair of
+        // nullptr if attempting to read more than bufferSize chars.
         auto it = std::find_if_not(gptr(), egptr(), condition);
-        vec.insert(vec.end(), gptr(), it);
-        while (it == egptr()) {
-            // buffer has been fully read; underflow and check eof
-            if (underflow() == std::char_traits<char>::eof()) {
-                setg(eback(), it, egptr());
-                return vec;
+        if (it == egptr()) {
+            if (underflow(egptr() - gptr()) == std::char_traits<char>::eof()) {
+                setg(eback(), egptr(), egptr());
+                return RawToken(eback(), egptr());
             }
-            it = std::find_if_not(gptr(), egptr(), condition);
-            vec.insert(vec.end(), gptr(), it);
+            it = std::find_if_not(eback(), egptr(), condition);
+            if (it == egptr()) {
+                setg(eback(), eback(), egptr());
+                return RawToken(nullptr, nullptr);
+            }
+        } else {
+            RawToken res(gptr(), it);
+            setg(eback(), it, egptr());
+            return res;
         }
-        setg(eback(), it, egptr());
-        return vec;
     }
     
     StreamBuffer(std::streambuf* sbuf) 
@@ -63,16 +79,28 @@ class StreamBuffer : public std::streambuf {
         delete[] buffer;
     }
     
-    protected:    
-    int_type underflow() override {
-        // attempts to move buffer window forward by bufferSize - 1 chars.
-        buffer[0] = buffer[bufferSize - 1];
-        std::streamsize read = source->sgetn(buffer+1, bufferSize-1);
+    private:
+    int_type underflow(std::streamsize n) {
+        // Keeps the last n characters (pushing them to the front of the
+        // buffer) and reads bufferSize - n more characters into the buffer.
+        // Assumes n <= bufferSize.
+        for (int i = 0; i < n; ++i) {
+            buffer[i] = buffer[bufferSize - n + i];
+        }
+        // Attempts to read from source -- note that if eof is found, the
+        // buffer has already been altered (see above!).
+        std::streamsize read = source->sgetn(buffer + n, bufferSize - n);
+        setg(buffer, buffer + n, buffer + n + read);
         if (read == 0) {
             return std::char_traits<char>::eof();
         }
-        setg(buffer, buffer + 1, buffer + 1 + read);
         return *gptr();
+    }
+    
+    protected:    
+    int_type underflow() override {
+        // Attempts to move buffer window forward by bufferSize - 1 chars.
+        return underflow(1);
     }
     
     int_type pbackfail(int_type ch = std::char_traits<char>::eof()) override {
@@ -147,17 +175,13 @@ class Istream : public std::istream {
     { }
     
     template <typename Condition>
-    VecBuf readUntil(Condition condition) {
-        VecBuf vecbuf {};
-        fbuf->readUntil(vecbuf, condition);
-        return vecbuf;
+    RawToken readUntil(Condition condition) {
+        return fbuf->readUntil(vecbuf, condition);
     }
     
     template <typename Condition>
-    VecBuf readWhile(Condition condition) {
-        VecBuf vecbuf {};
-        fbuf->readWhile(vecbuf, condition);
-        return vecbuf;
+    RawToken readWhile(Condition condition) {
+        return fbuf->readWhile(vecbuf, condition);
     }
 };
 

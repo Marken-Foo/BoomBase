@@ -9,16 +9,19 @@
 #include <utility>
 
 struct RawToken {
-    // Pointers to a character buffer. If start == end, then the token is "".
-    char* start {nullptr};
+    // Pointers to a character buffer. If begin == end, then the token is "".
+    char* begin {nullptr};
     char* end {nullptr};
-    RawToken() = default;
+    RawToken(char* startptr, char* endptr)
+        : begin(startptr)
+        , end(endptr)
+        {}
 };
 
 class StreamBuffer : public std::streambuf {
     // Extension of std::streambuf to include readWhile/readUntil methods
     private:
-    int bufferSize {16384}; // buffer size
+    int bufferSize {32768}; // buffer size
     std::streambuf* source {nullptr};
     char* buffer {nullptr};
     
@@ -37,6 +40,7 @@ class StreamBuffer : public std::streambuf {
         // nullptr if attempting to read more than bufferSize chars.
         auto it = std::find_if(gptr(), egptr(), condition);
         if (it == egptr()) {
+            // underflowing
             if (underflow(egptr() - gptr()) == std::char_traits<char>::eof()) {
                 setg(eback(), egptr(), egptr());
                 return RawToken(eback(), egptr());
@@ -44,7 +48,11 @@ class StreamBuffer : public std::streambuf {
             it = std::find_if(eback(), egptr(), condition);
             if (it == egptr()) {
                 setg(eback(), eback(), egptr());
-                return RawToken(nullptr, nullptr);
+                return RawToken(nullptr, nullptr); // bug: will not recognise valid token that ends exactly at EOF.
+            } else {
+                RawToken res(eback(), it);
+                setg(eback(), it, egptr());
+                return res;
             }
         } else {
             RawToken res(gptr(), it);
@@ -69,6 +77,10 @@ class StreamBuffer : public std::streambuf {
             if (it == egptr()) {
                 setg(eback(), eback(), egptr());
                 return RawToken(nullptr, nullptr);
+            } else {
+                RawToken res(gptr(), it);
+                setg(eback(), it, egptr());
+                return res;
             }
         } else {
             RawToken res(gptr(), it);

@@ -38,11 +38,13 @@ const IsOneOf isIdentifierEnd{PGN_WHITESPACE + "\""};
 const IsOneOf isTokenEnd{PGN_WHITESPACE + ".?!"};
 
 void skipWhitespace(Istream& input, PgnVisitor& parser) {
-    while (input.readWhile(IsOneOf{" \r\t\v"}).size() != 0) {
+    auto token = input.readWhile(IsOneOf{" \r\t\v"});
+    while (token.begin != token.end) {
         if (input.peek() == '\n') {
             input.get();
             parser.acceptNewline();
         }
+        token = input.readWhile(IsOneOf{" \r\t\v"});
     }
     return;
 }
@@ -101,43 +103,29 @@ bool readTagPair(Istream& input, PgnVisitor& parser) {
     skipToToken(input, parser);
     
     // read tag name
-    auto tagName {input.readUntil(isIdentifierEnd)};
+    auto token = input.readUntil(isIdentifierEnd);
+    std::string tagName {token.begin, token.end};
     skipToToken(input, parser);
     
     // read tag value (enclosed in double quotes)
     if (input.get() != '"') {
         return false; // expected opening double quote
     }
-    RawToken tagValue {input.readUntil(IsOneOf{"\"\\"})};
-    if (!input) {return false;} // unexpected eof, unclosed '"' in tag
-    char ch = input.get();
-    if (!input) {break;} // unexpected eof, incomplete tag
-    while (ch != '"' && input) {
-        // Read past escaped characters
-        if (ch == '\\') {
-            input.get(); // eat whatever the escaped character is
-            if (!input) {break;} // error -- unexpected eof, incomplete tag
-            tagValue.end = input.readUntil(IsOneOf{"\"\\"}).end;
-            ch = input.get();
-        }
-    }
-    
-    
+    std::string tagValue {};
     char ch {};
     while (ch != '"' && input) {
         // read until closing double quote, while correctly reading escaped backslashes/double quotes.
-        auto partial {input.readUntil(IsOneOf{"\"\\"})};
-        tagValue.insert(tagValue.end(), partial.begin(), partial.end()); // is double quote or backslash
+        auto continuation = input.readUntil(IsOneOf{"\"\\"});
+        tagValue.append(continuation.begin, continuation.end); // is double quote or backslash
         ch = input.get();
         if (ch == '"') {break;}
         else if (ch == '\\') {
             char escaped = input.get();
             if (!input) {break;}
             else if (escaped != '\\' && escaped != '"') {
-                tagValue.push_back('\\');
-                tagValue.push_back('\\');
+                tagValue.append("\\");
             }
-            tagValue.push_back(escaped);
+            tagValue.append(1, escaped);
         }
     }
     // ensure tag pair is closed with ']'
@@ -167,7 +155,7 @@ bool readToken(Istream& input, PgnVisitor& parser) {
     case ')' :
         return parser.acceptRavEnd();
     case '{' : {
-        VecBuf comment {input.readUntil([](char c){return c == '}';})};
+        auto comment {input.readUntil([](char c){return c == '}';})};
         if (input.get() == '}') {
             return parser.acceptComment(comment);
         } else {
@@ -192,14 +180,14 @@ bool readToken(Istream& input, PgnVisitor& parser) {
     }
     // if next token is not obvious from the first character alone, we need to grab it and check its type.
     input.unget();
-    VecBuf token = input.readUntil(isTokenEnd);
+    RawToken token = input.readUntil(isTokenEnd);
     // if token does not begin with a number, assume it is SAN
-    if (::isalpha(token[0])) {
+    if (::isalpha(token.begin[0])) {
         return parser.acceptSan(token);
     }
     
     // if token only contains digits, assume movenumber, eat trailing periods
-    if (std::all_of(token.begin(), token.end(), ::isdigit)) {
+    if (std::all_of(token.begin, token.end, ::isdigit)) {
         bool res = parser.acceptMoveNumber(token);
         // cleanup
         skipWhitespace(input, parser);
@@ -208,7 +196,7 @@ bool readToken(Istream& input, PgnVisitor& parser) {
     }
     
     // if token matches pgn game end, parse appropriate token.
-    std::string stok(token.begin(), token.end());
+    std::string stok(token.begin, token.end);
     if (stok == "1-0") {
         return parser.acceptResult(RESULT_WHITE);
     } else if (stok == "0-1") {
@@ -223,8 +211,8 @@ bool readToken(Istream& input, PgnVisitor& parser) {
 
 
 int main() {
-    PgnVisitor parser;
-    std::ifstream infile {"tests/fics2008.pgn"};
+    PrinterPgnVisitor parser;
+    std::ifstream infile {"tests/pgn.pgn"};
     StreamBuffer fbuf = infile.rdbuf();
     Istream inpgn {&fbuf};
     

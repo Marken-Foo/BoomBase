@@ -101,18 +101,32 @@ bool readTagPair(Istream& input, PgnVisitor& parser) {
     skipToToken(input, parser);
     
     // read tag name
-    VecBuf tagName {input.readUntil(isIdentifierEnd)};
+    auto tagName {input.readUntil(isIdentifierEnd)};
     skipToToken(input, parser);
     
     // read tag value (enclosed in double quotes)
     if (input.get() != '"') {
         return false; // expected opening double quote
     }
-    VecBuf tagValue {};
+    RawToken tagValue {input.readUntil(IsOneOf{"\"\\"})};
+    if (!input) {return false;} // unexpected eof, unclosed '"' in tag
+    char ch = input.get();
+    if (!input) {break;} // unexpected eof, incomplete tag
+    while (ch != '"' && input) {
+        // Read past escaped characters
+        if (ch == '\\') {
+            input.get(); // eat whatever the escaped character is
+            if (!input) {break;} // error -- unexpected eof, incomplete tag
+            tagValue.end = input.readUntil(IsOneOf{"\"\\"}).end;
+            ch = input.get();
+        }
+    }
+    
+    
     char ch {};
     while (ch != '"' && input) {
         // read until closing double quote, while correctly reading escaped backslashes/double quotes.
-        VecBuf partial {input.readUntil(IsOneOf{"\"\\"})};
+        auto partial {input.readUntil(IsOneOf{"\"\\"})};
         tagValue.insert(tagValue.end(), partial.begin(), partial.end()); // is double quote or backslash
         ch = input.get();
         if (ch == '"') {break;}
@@ -120,8 +134,8 @@ bool readTagPair(Istream& input, PgnVisitor& parser) {
             char escaped = input.get();
             if (!input) {break;}
             else if (escaped != '\\' && escaped != '"') {
-                tagValue.push_back('\'');
-                tagValue.push_back('\'');
+                tagValue.push_back('\\');
+                tagValue.push_back('\\');
             }
             tagValue.push_back(escaped);
         }

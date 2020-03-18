@@ -6,8 +6,14 @@
 #include <ios>
 #include <istream>
 #include <streambuf>
+#include <utility>
 
-using RawToken = std::pair<char*, char*>;
+struct RawToken {
+    // Pointers to a character buffer. If start == end, then the token is "".
+    char* start {nullptr};
+    char* end {nullptr};
+    RawToken() = default;
+};
 
 class StreamBuffer : public std::streambuf {
     // Extension of std::streambuf to include readWhile/readUntil methods
@@ -176,12 +182,12 @@ class Istream : public std::istream {
     
     template <typename Condition>
     RawToken readUntil(Condition condition) {
-        return fbuf->readUntil(vecbuf, condition);
+        return fbuf->readUntil(condition);
     }
     
     template <typename Condition>
     RawToken readWhile(Condition condition) {
-        return fbuf->readWhile(vecbuf, condition);
+        return fbuf->readWhile(condition);
     }
 };
 

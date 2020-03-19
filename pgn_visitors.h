@@ -14,7 +14,7 @@ class PgnVisitor {
     // Default is a "do nothing" visitor. Useful for benchmarking or skipping.
     // TODO: it should also track whether a PGN game is over or not?
     public:
-    virtual bool acceptTagPair(std::string tagName, std::string tagValue) {
+    virtual bool acceptTagPair(RawToken tagName, RawToken tagValue) {
         return true;
     }
     virtual bool acceptComment(RawToken comment) {return true;}
@@ -33,8 +33,20 @@ class PgnVisitor {
 class PrinterPgnVisitor : public PgnVisitor {
     // Prints all information received to standard output. Useful for debugging.
     public:
-    bool acceptTagPair(std::string tagName, std::string tagValue) override {
-        std::cout << "Tag name: <" << tagName << ">, tag value: <" << tagValue << ">\n";
+    bool acceptTagPair(RawToken tagName, RawToken tagValue) override {
+        std::cout << "Tag name: <";
+        auto it = tagName.begin;
+        while (it != tagName.end) {
+            std::cout << *it;
+            ++it;
+        }
+        std::cout << ">, tag value: <";
+        auto it2 = tagValue.begin;
+        while (it2 != tagValue.end) {
+            std::cout << *it2;
+            ++it2;
+        }
+        std::cout << ">\n";
         return true;
     }
     bool acceptComment(RawToken comment) override {

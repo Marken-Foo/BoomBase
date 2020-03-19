@@ -98,34 +98,45 @@ bool readLineComment(Istream& input, PgnVisitor& parser) {
 }
 
 bool readTagPair(Istream& input, PgnVisitor& parser) {
+    // TODO: handle unexpected failures better.
+    // Assumes that underlying buffer is large enough to hold both tagName and tagValue without underflowing.
     // entry point: just read a '[' character
     // Now skip whitespace while handling escapes and semicolon comments
     skipToToken(input, parser);
     
     // read tag name
-    auto token = input.readUntil(isIdentifierEnd);
-    std::string tagName {token.begin, token.end};
+    auto tagName = input.readUntil(isIdentifierEnd);
+    // auto token = input.readUntil(isIdentifierEnd);
+    // std::string tagName {token.begin, token.end};
     skipToToken(input, parser);
     
     // read tag value (enclosed in double quotes)
     if (input.get() != '"') {
         return false; // expected opening double quote
     }
-    std::string tagValue {};
+    auto tagValue = RawToken(nullptr, nullptr);
+    // std::string tagValue {};
     char ch {};
     while (ch != '"' && input) {
         // read until closing double quote, while correctly reading escaped backslashes/double quotes.
         auto continuation = input.readUntil(IsOneOf{"\"\\"});
-        tagValue.append(continuation.begin, continuation.end); // is double quote or backslash
+        if (tagValue.begin == nullptr) {
+            tagValue.begin = continuation.begin;
+        }
+        tagValue.end = continuation.end; // is double quote or backslash
         ch = input.get();
-        if (ch == '"') {break;}
+        if (!input) {break;} // expected closing double quote
+        else if (ch == '"') {break;}
         else if (ch == '\\') {
             char escaped = input.get();
             if (!input) {break;}
-            else if (escaped != '\\' && escaped != '"') {
-                tagValue.append("\\");
+            else {
+                tagValue.end += 2; // increment once for backslash, once for following char.
             }
-            tagValue.append(1, escaped);
+            // else if (escaped != '\\' && escaped != '"') {
+                // tagValue.append("\\");
+            // }
+            // tagValue.append(1, escaped);
         }
     }
     // ensure tag pair is closed with ']'
@@ -212,7 +223,7 @@ bool readToken(Istream& input, PgnVisitor& parser) {
 
 int main() {
     PrinterPgnVisitor parser;
-    std::ifstream infile {"tests/pgn.pgn"};
+    std::ifstream infile {"tests/fics2008.pgn"};
     StreamBuffer fbuf = infile.rdbuf();
     Istream inpgn {&fbuf};
     

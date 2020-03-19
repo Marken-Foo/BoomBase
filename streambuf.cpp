@@ -38,6 +38,7 @@ class StreamBuffer : public std::streambuf {
         // Returns pointers to [start, end) of read characters.
         // Will only read characters up to bufferSize, returns a pair of
         // nullptr if attempting to read more than bufferSize chars.
+        early_underflow();
         auto it = std::find_if(gptr(), egptr(), condition);
         if (it == egptr()) {
             // underflowing
@@ -67,6 +68,7 @@ class StreamBuffer : public std::streambuf {
         // Returns pointers to [start, end) of read characters.
         // Will only read characters up to bufferSize, returns a pair of
         // nullptr if attempting to read more than bufferSize chars.
+        early_underflow();
         auto it = std::find_if_not(gptr(), egptr(), condition);
         if (it == egptr()) {
             if (underflow(egptr() - gptr()) == std::char_traits<char>::eof()) {
@@ -113,6 +115,15 @@ class StreamBuffer : public std::streambuf {
             return std::char_traits<char>::eof();
         }
         return *gptr();
+    }
+    
+    int_type early_underflow() {
+        int_type chars_left = bufferSize - (gptr() - buffer);
+        if (chars_left < bufferSize / 4) {
+            return underflow(chars_left);
+        } else {
+            return 0;
+        }
     }
     
     protected:    
